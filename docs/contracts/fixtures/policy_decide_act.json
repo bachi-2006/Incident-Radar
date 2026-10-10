@@ -1,0 +1,13 @@
+{
+  "run_id": "run_act_1728550000",
+  "project_id": "proj_demo",
+  "assessment_status": "supported",
+  "candidate_cause": "Recent bad canary deployment causing payment gateway latency spikes",
+  "recommended_action": "rollback_latest_deploy",
+  "fallback_action": "disable_demo_feature_flag",
+  "top_suspect": {
+    "sha": "a1b2c3d4",
+    "score": 85,
+    "deployed_at": "2026-10-10T19:00:00.000Z"
+  }
+}

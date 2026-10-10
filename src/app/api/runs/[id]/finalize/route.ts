@@ -1,26 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
+import { validateWorkatoAuth, unauthorizedResponse } from "@/lib/workato-auth";
+import { updateRunState, recordAuditLog } from "@/lib/run-state";
 
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
-    const secret = req.headers.get("x-ir-secret") || req.headers.get("authorization")?.replace("Bearer ", "");
-    const configuredSecret = process.env.WORKATO_SHARED_SECRET;
-
-    if (configuredSecret && secret !== configuredSecret) {
-      return NextResponse.json({ error: "Unauthorized: Invalid X-IR-Secret" }, { status: 401 });
+    const auth = validateWorkatoAuth(req);
+    if (!auth.authorized) {
+      return unauthorizedResponse(auth.error);
     }
 
+    const { id } = await params;
     const body = await req.json().catch(() => ({}));
     const outcome = body.outcome || "resolved";
+    const project_id = body.project_id || "proj_demo";
 
-    // Invert/derive realistic dynamic metrics per run from hash
     const hashInt = parseInt(crypto.createHash("md5").update(id).digest("hex").substring(0, 8), 16);
-    const errorRateVal = ((hashInt % 7 + 2) / 10).toFixed(1); // 0.2% - 0.8%
-    const latencyVal = 65 + (hashInt % 75); // 65ms - 139ms
+    const errorRateVal = ((hashInt % 7 + 2) / 10).toFixed(1);
+    const latencyVal = 65 + (hashInt % 75);
 
     let inferredService = "payment-service";
     if (id.includes("auth")) inferredService = "auth-gateway";
@@ -48,9 +48,24 @@ export async function POST(
       .update(JSON.stringify(receiptPayload))
       .digest("hex");
 
+    await updateRunState(id, {
+      status: outcome === "resolved" ? "resolved" : "failed",
+      receipt_sha256: receiptHash,
+    });
+
+    await recordAuditLog({
+      project_id,
+      actor: "workato:ir-remediate-verify",
+      action: "run_finalized",
+      target: id,
+      detail: { outcome, receipt_hash: receiptHash, targetService },
+    });
+
+    const baseUrl = process.env.APP_BASE_URL || "https://incident-radar.onrender.com";
+
     const slack_text =
       outcome === "resolved"
-        ? `✅ *Incident Radar — Incident Remediated & Verified*\n• Target Service: \`${targetService}\`\n• Verification: 3 consecutive healthy telemetry samples\n• Error Rate: ${errorRate} | Latency p95: ${p95Latency}\n• Recovery Receipt: \`sha256:${receiptHash.substring(0, 16)}...\`\n• View Run: https://incident-radar.onrender.com/runs/${id}`
+        ? `✅ *Incident Radar — Incident Remediated & Verified*\n• Target Service: \`${targetService}\`\n• Verification: 3 consecutive healthy telemetry samples\n• Error Rate: ${errorRate} | Latency p95: ${p95Latency}\n• Recovery Receipt: \`sha256:${receiptHash.substring(0, 16)}...\`\n• View Run: ${baseUrl}/runs/${id}`
         : `🛑 *Incident Radar — Incident Escalated*\n• Target Service: \`${targetService}\`\n• Run ${id} could not achieve verified recovery. Escalated to on-call engineer.`;
 
     return NextResponse.json({

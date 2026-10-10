@@ -1,0 +1,8 @@
+{
+  "run_id": "run_ask_1728550000",
+  "project_id": "proj_demo",
+  "assessment_status": "uncertain",
+  "candidate_cause": "Gradual cluster memory exhaustion over 48h; unconfirmed leak origin across microservices.",
+  "recommended_action": "restart_demo_service",
+  "fallback_action": "disable_demo_feature_flag"
+}

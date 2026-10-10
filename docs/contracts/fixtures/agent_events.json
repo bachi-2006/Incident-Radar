@@ -1,0 +1,11 @@
+{
+  "run_id": "run_act_1728550000",
+  "project_id": "proj_demo",
+  "incident_id": "inc_payment_spike_1728550000",
+  "step_key": "orchestrator_started",
+  "actor": "workato:ir-orchestrator",
+  "status": "completed",
+  "detail": {
+    "source": "simulation"
+  }
+}

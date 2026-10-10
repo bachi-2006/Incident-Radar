@@ -1,0 +1,7 @@
+{
+  "run_id": "run_notify_1728550000",
+  "project_id": "proj_demo",
+  "assessment_status": "contradictory",
+  "candidate_cause": "Conflicting telemetry: CPU saturation on primary node with nominal query latency and zero external traffic.",
+  "recommended_action": "restart_demo_service"
+}

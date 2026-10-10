@@ -1,0 +1,7 @@
+{
+  "run_id": "run_act_1728550000",
+  "project_id": "proj_demo",
+  "role": "primary",
+  "action": "rollback_latest_deploy",
+  "target_sha": "a1b2c3d4"
+}

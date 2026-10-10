@@ -1,0 +1,7 @@
+{
+  "project_id": "proj_demo",
+  "outcome": "resolved",
+  "target_service": "payment-service",
+  "error_rate": "0.3%",
+  "p95_latency": "92ms"
+}
