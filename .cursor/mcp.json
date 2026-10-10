@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "workato-airo-mcp-server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://app.workato.com/airo_mcp"
+      ]
+    }
+  }
+}
