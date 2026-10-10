@@ -105,67 +105,130 @@
             </div>
           </div>
 
-          <div class="mt-6 space-y-3">
-            <div class="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center justify-between">
-              <span>Inject Production Failures</span>
-              <span class="text-[10px] text-emerald-400">⚡ Auto-Fires Workato</span>
+          <div class="mt-6 space-y-4">
+            <!-- Category 1: Autonomous Remediation (ACT) -->
+            <div>
+              <div class="text-[11px] font-bold uppercase tracking-wider text-emerald-400 flex items-center justify-between pb-1.5 border-b border-emerald-500/20">
+                <span class="flex items-center gap-1.5">⚡ <span>Category 1: Autonomous Remediation (ACT)</span></span>
+                <span class="text-[10px] text-slate-400 font-mono">Auto-Fix</span>
+              </div>
+              <div class="mt-2 space-y-2">
+                <!-- Frontend ACT: @Dachepally -->
+                <button
+                  id="pay-button"
+                  onclick="triggerFrontendDeadClick()"
+                  class="w-full py-2.5 px-3 rounded-xl border border-indigo-500/40 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-200 text-xs font-medium flex items-center justify-between transition group"
+                >
+                  <div class="flex items-center gap-2 text-left">
+                    <span class="text-indigo-400">🎨</span>
+                    <div>
+                      <div class="font-semibold text-slate-200">Frontend Dead Click</div>
+                      <div class="text-[10px] text-indigo-300">Target: <strong class="text-white">@Dachepally</strong> (Frontend)</div>
+                    </div>
+                  </div>
+                  <div class="text-right font-mono text-[10px]">
+                    <span class="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300">ACT</span>
+                    <div id="click-counter" class="text-slate-400 text-[9px] mt-0.5">Clicks: 0</div>
+                  </div>
+                </button>
+
+                <!-- Backend ACT: @Rahul Verma -->
+                <button
+                  onclick="triggerBackendDbPool()"
+                  class="w-full py-2.5 px-3 rounded-xl border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-200 text-xs font-medium flex items-center justify-between transition group"
+                >
+                  <div class="flex items-center gap-2 text-left">
+                    <span class="text-rose-400">⚙️</span>
+                    <div>
+                      <div class="font-semibold text-slate-200">DB Connection Pool NPE</div>
+                      <div class="text-[10px] text-rose-300">Target: <strong class="text-white">@Rahul Verma</strong> (Backend)</div>
+                    </div>
+                  </div>
+                  <div class="text-right font-mono text-[10px]">
+                    <span class="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300">ACT</span>
+                    <div class="text-slate-400 text-[9px] mt-0.5">~1450ms</div>
+                  </div>
+                </button>
+
+                <!-- DevOps ACT: @Sam Taylor -->
+                <button
+                  onclick="triggerDevopsCanary()"
+                  class="w-full py-2.5 px-3 rounded-xl border border-teal-500/40 bg-teal-500/10 hover:bg-teal-500/20 text-teal-200 text-xs font-medium flex items-center justify-between transition group"
+                >
+                  <div class="flex items-center gap-2 text-left">
+                    <span class="text-teal-400">🐳</span>
+                    <div>
+                      <div class="font-semibold text-slate-200">K8s Pod CrashLoop OOM</div>
+                      <div class="text-[10px] text-teal-300">Target: <strong class="text-white">@Sam Taylor</strong> (DevOps)</div>
+                    </div>
+                  </div>
+                  <div class="text-right font-mono text-[10px]">
+                    <span class="px-1.5 py-0.5 rounded bg-teal-500/20 text-teal-300">ACT</span>
+                    <div class="text-slate-400 text-[9px] mt-0.5">~850ms</div>
+                  </div>
+                </button>
+              </div>
             </div>
 
-            <!-- Dead click button -->
-            <button
-              id="pay-button"
-              onclick="triggerDeadClick()"
-              class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-medium text-xs md:text-sm flex items-center justify-between shadow-lg shadow-indigo-600/20 transition active:scale-[0.99]"
-            >
-              <span class="flex items-center gap-2">
-                <span>⚡</span> Submit Payment (Triggers Dead Click)
-              </span>
-              <span id="click-counter" class="text-xs font-mono bg-black/30 px-2 py-0.5 rounded">
-                Clicks: 0
-              </span>
-            </button>
+            <!-- Category 2: Human Sign-Off (ASK) -->
+            <div>
+              <div class="text-[11px] font-bold uppercase tracking-wider text-amber-400 flex items-center justify-between pb-1.5 border-b border-amber-500/20">
+                <span class="flex items-center gap-1.5">🛡️ <span>Category 2: Human Sign-Off (ASK)</span></span>
+                <span class="text-[10px] text-slate-400 font-mono">Approval Req</span>
+              </div>
+              <div class="mt-2 space-y-2">
+                <!-- System Architecture ASK: @Nithish gajjela -->
+                <button
+                  onclick="triggerSystemDesync()"
+                  class="w-full py-2.5 px-3 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-200 text-xs font-medium flex items-center justify-between transition group"
+                >
+                  <div class="flex items-center gap-2 text-left">
+                    <span class="text-amber-400">📐</span>
+                    <div>
+                      <div class="font-semibold text-slate-200">Auth Gateway Desync</div>
+                      <div class="text-[10px] text-amber-300">Target: <strong class="text-white">@Nithish</strong> (System Design)</div>
+                    </div>
+                  </div>
+                  <div class="text-right font-mono text-[10px]">
+                    <span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">ASK</span>
+                    <div class="text-slate-400 text-[9px] mt-0.5">~2600ms</div>
+                  </div>
+                </button>
 
-            <!-- 500 error -->
-            <button
-              onclick="trigger500()"
-              class="w-full py-2.5 px-3 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-200 text-xs font-medium flex items-center justify-between transition"
-            >
-              <span>🚨 500 Error (Auto-Remediate ACT)</span>
-              <span class="font-mono text-[11px] text-rose-400">~1450ms</span>
-            </button>
-
-            <!-- 504 soft error -->
-            <button
-              onclick="triggerSoftError()"
-              class="w-full py-2.5 px-3 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-200 text-xs font-medium flex items-center justify-between transition"
-            >
-              <span>⚠️ Soft Error (HTTP 200 / 504 Timeout)</span>
-              <span class="font-mono text-[11px] text-amber-400">~2600ms</span>
-            </button>
-
-            <!-- 404 missing resource -->
-            <button
-              onclick="trigger404()"
-              class="w-full py-2.5 px-3 rounded-xl border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-200 text-xs font-medium flex items-center justify-between transition"
-            >
-              <span>🔍 404 Not Found (Missing Badge Asset)</span>
-              <span class="font-mono text-[11px] text-cyan-400">~50ms</span>
-            </button>
-
-            <!-- Memory thrash OOM -->
-            <button
-              onclick="triggerOOM()"
-              class="w-full py-2.5 px-3 rounded-xl border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-200 text-xs font-medium flex items-center justify-between transition"
-            >
-              <span>💥 Cluster Heap OOM (Human Sign-off ASK)</span>
-              <span class="font-mono text-[11px] text-purple-400">~4100ms</span>
-            </button>
+                <!-- Admin / Lead ASK: @Rohith D -->
+                <button
+                  onclick="triggerClusterOOM()"
+                  class="w-full py-2.5 px-3 rounded-xl border border-purple-500/40 bg-purple-500/10 hover:bg-purple-500/20 text-purple-200 text-xs font-medium flex items-center justify-between transition group"
+                >
+                  <div class="flex items-center gap-2 text-left">
+                    <span class="text-purple-400">💥</span>
+                    <div>
+                      <div class="font-semibold text-slate-200">48h Cluster Heap Thrash</div>
+                      <div class="text-[10px] text-purple-300">Target: <strong class="text-white">@Rohith D</strong> (Admin/Lead)</div>
+                    </div>
+                  </div>
+                  <div class="text-right font-mono text-[10px]">
+                    <span class="px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300">ASK</span>
+                    <div class="text-slate-400 text-[9px] mt-0.5">~4100ms</div>
+                  </div>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div class="pt-4 border-t border-slate-800 text-[11px] text-slate-500 flex items-center justify-between">
-          <span>Admin: <strong class="text-slate-300">@Rohith D</strong></span>
-          <span class="text-emerald-400 font-mono">PII Scrubbed</span>
+        <div class="pt-4 border-t border-slate-800 text-[11px] text-slate-400 space-y-1">
+          <div class="flex items-center justify-between text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+            <span>On-Call Specialists Matrix</span>
+            <span class="text-emerald-400 font-mono">5 Active</span>
+          </div>
+          <div class="flex flex-wrap gap-1.5 text-[10px] font-mono">
+            <span class="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-indigo-300">@Rohith D (Admin)</span>
+            <span class="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-cyan-300">@Dachepally (Frontend)</span>
+            <span class="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-amber-300">@Nithish (System)</span>
+            <span class="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-rose-300">@Rahul (Backend)</span>
+            <span class="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-teal-300">@Sam (DevOps)</span>
+          </div>
         </div>
       </div>
 
@@ -271,8 +334,8 @@
 
       // 2. Directly trigger Workato Orchestrator workflow on failure
       if (data.scenario) {
-        const assignedSlackId = data.scenario === "ask" ? "U01ROHITHADMIN" : data.scenario === "notify" ? "U03NITHISHSYS" : "U02DACHEPALLY";
-        const assignedName = data.scenario === "ask" ? "Rohith D" : data.scenario === "notify" ? "Nithish gajjela" : "Dachepally";
+        const assignedSlackId = data.assignedSlackId || (data.scenario.includes("ask") ? "U01ROHITHADMIN" : data.scenario === "notify" ? "U03NITHISHSYS" : "U02DACHEPALLY");
+        const assignedName = data.assignedName || (data.scenario.includes("ask") ? "Rohith D" : data.scenario === "notify" ? "Nithish gajjela" : "Dachepally");
         fetch(`${RENDER_BACKEND}/api/orchestrator/trigger`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -288,7 +351,7 @@
           const badge = document.getElementById(`workato-badge-${eventId}`);
           if (badge) {
             badge.className = "text-[10px] font-mono text-emerald-400 pt-1 flex items-center gap-1.5";
-            badge.innerHTML = `<span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>⚡ Workato Job: <strong class="text-white font-bold">${resData.job_id || 'Delivered'}</strong> | Policy: <strong class="text-emerald-300 font-bold">${resData.decision || data.scenario.toUpperCase()}</strong> | Slack: <span class="text-slate-200">#all-incident-radar</span>`;
+            badge.innerHTML = `<span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>⚡ Workato Job: <strong class="text-white font-bold">${resData.job_id || 'Delivered'}</strong> | Policy: <strong class="text-emerald-300 font-bold">${resData.decision || data.scenario.toUpperCase()}</strong> | Slack Target: <strong class="text-indigo-200">@${assignedName}</strong>`;
           }
         })
         .catch(err => {
@@ -302,7 +365,8 @@
       }
     }
 
-    function triggerDeadClick() {
+    // 1. FRONTEND ACT: @Dachepally (Frontend Developer)
+    function triggerFrontendDeadClick() {
       clickCount++;
       document.getElementById("click-counter").innerText = `Clicks: ${clickCount}`;
       addTelemetryEvent({
@@ -310,78 +374,99 @@
         code: "CLIENT_DEAD_CLICK",
         statusCode: 0,
         latencyMs: 1000,
-        confidence: 93,
-        scenario: "act", // Triggers frontend incident to @Dachepally
+        confidence: 94,
+        scenario: "fe_act",
+        assignedSlackId: "U02DACHEPALLY",
+        assignedName: "Dachepally",
         message: `Dead click: User clicked button#pay-button ${clickCount}x with 0 DOM mutations or network requests`,
-        fingerprint: "fp_dead_click_pay_btn",
+        fingerprint: "fp_fe_dead_click_pay_btn",
         targetService: "checkout-frontend",
         color: "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
       });
     }
 
-    function trigger500() {
+    // 2. BACKEND ACT: @Rahul Verma (Backend Specialist)
+    function triggerBackendDbPool() {
       const lat = 1420 + Math.floor(Math.random() * 380);
       addTelemetryEvent({
         kind: "failed_request",
-        code: "HTTP_500_INTERNAL_ERROR",
+        code: "DATABASE_POOL_EXHAUSTED",
         statusCode: 500,
         latencyMs: lat,
         confidence: 96,
-        scenario: "act", // Triggers ACT scenario in Workato
+        scenario: "be_act",
+        assignedSlackId: "U04RAHULBACK",
+        assignedName: "Rahul Verma",
         message: "DatabaseConnectionTimeout: pool exhausted after 30000ms at CheckoutController.processPayment()",
-        fingerprint: "fp_500_pool_exhaust",
+        fingerprint: "fp_be_500_pool_exhaust",
         targetService: "payment-gateway-service",
         color: "bg-rose-500/20 text-rose-300 border border-rose-500/30"
       });
     }
 
-    function triggerSoftError() {
+    // 3. DEVOPS ACT: @Sam Taylor (DevOps Specialist)
+    function triggerDevopsCanary() {
+      const lat = 820 + Math.floor(Math.random() * 150);
+      addTelemetryEvent({
+        kind: "resource",
+        code: "K8S_CANARY_OOM_CRASH",
+        statusCode: 503,
+        latencyMs: lat,
+        confidence: 93,
+        scenario: "devops_act",
+        assignedSlackId: "U05SAMDEVOPS",
+        assignedName: "Sam Taylor",
+        message: "Kubernetes pod CrashLoopBackOff on worker-pool canary replica. Container exit code 137 (OOMKilled).",
+        fingerprint: "fp_devops_k8s_crashloop",
+        targetService: "k8s-worker-pool",
+        color: "bg-teal-500/20 text-teal-300 border border-teal-500/30"
+      });
+    }
+
+    // 4. SYSTEM ARCHITECTURE ASK: @Nithish gajjela (System Designer)
+    function triggerSystemDesync() {
       const lat = 2480 + Math.floor(Math.random() * 620);
       addTelemetryEvent({
         kind: "soft_error",
-        code: "GATEWAY_TIMEOUT_504",
+        code: "AUTH_GATEWAY_DESYNC_504",
         statusCode: 200,
         latencyMs: lat,
         confidence: 91,
-        scenario: "act",
-        message: "HTTP 200 OK returned but payload contains { success: false, code: 'GATEWAY_TIMEOUT_504' }",
-        fingerprint: "fp_soft_gw_timeout",
-        targetService: "banking-switch-core",
+        scenario: "sys_ask",
+        assignedSlackId: "U03NITHISHSYS",
+        assignedName: "Nithish gajjela",
+        message: "Telemetry Contradiction: Nominal 2ms query latency but auth gateway rejects 85% requests across split-brain regions.",
+        fingerprint: "fp_sys_auth_split_brain",
+        targetService: "auth-gateway-service",
         color: "bg-amber-500/20 text-amber-300 border border-amber-500/30"
       });
     }
 
-    function trigger404() {
-      const lat = 45 + Math.floor(Math.random() * 35);
-      addTelemetryEvent({
-        kind: "resource",
-        code: "HTTP_404_NOT_FOUND",
-        statusCode: 404,
-        latencyMs: lat,
-        confidence: 88,
-        scenario: "notify",
-        message: "Failed to load resource: 404 Not Found on /images/secure-checkout-seal.png",
-        fingerprint: "fp_404_seal_badge",
-        targetService: "cdn-static-assets",
-        color: "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30"
-      });
-    }
-
-    function triggerOOM() {
+    // 5. ADMIN / LEAD ASK: @Rohith D (Admin / Project Lead)
+    function triggerClusterOOM() {
       const lat = 3850 + Math.floor(Math.random() * 950);
       addTelemetryEvent({
         kind: "rejection",
-        code: "HEAP_OUT_OF_MEMORY",
+        code: "HEAP_OUT_OF_MEMORY_P1",
         statusCode: 503,
         latencyMs: lat,
         confidence: 95,
-        scenario: "ask", // Triggers ASK approval scenario to @Rohith D and @Nithish
-        message: "FATAL: Node.js worker heap limit reached (1420MB used of 1430MB). Worker thread restarting.",
-        fingerprint: "fp_heap_oom_worker",
+        scenario: "ask",
+        assignedSlackId: "U01ROHITHADMIN",
+        assignedName: "Rohith D",
+        message: "FATAL: Gradual cluster heap memory thrash over 48h (92% saturation). 50,000 active sessions affected.",
+        fingerprint: "fp_heap_oom_cluster",
         targetService: "worker-cluster-pool",
         color: "bg-purple-500/20 text-purple-300 border border-purple-500/30"
       });
     }
+
+    // Aliases for compatibility
+    const triggerDeadClick = triggerFrontendDeadClick;
+    const trigger500 = triggerBackendDbPool;
+    const triggerSoftError = triggerSystemDesync;
+    const trigger404 = triggerDevopsCanary;
+    const triggerOOM = triggerClusterOOM;
   </script>
 </body>
 </html>

@@ -69,22 +69,35 @@ export async function POST(req: NextRequest) {
     const baseUrl = process.env.APP_BASE_URL || "https://incident-radar.onrender.com";
 
     // Person-specific routing based on scenario and cause
-    let assignedSlackId = "U01ROHITHADMIN";
-    let assignedRole = "Admin / Project Lead";
-    let assignedHandle = "@Rohith D";
+    let assignedSlackId = body.assigned_user_slack_id || "U01ROHITHADMIN";
+    let assignedRole = body.assigned_user_role || "Admin / Project Lead";
+    let assignedHandle = body.assigned_user_name ? `@${body.assigned_user_name}` : "@Rohith D";
 
-    if (isAsk) {
-      assignedSlackId = "U01ROHITHADMIN";
-      assignedRole = "Admin / Project Lead";
-      assignedHandle = "@Rohith D";
-    } else if (isNotify) {
-      assignedSlackId = "U03NITHISHSYS";
-      assignedRole = "System Designer";
-      assignedHandle = "@Nithish gajjela";
-    } else {
-      assignedSlackId = "U02DACHEPALLY";
-      assignedRole = "Frontend Developer";
-      assignedHandle = "@Dachepally";
+    if (!body.assigned_user_slack_id) {
+      const causeLower = candidate_cause.toLowerCase();
+      const runLower = run_id.toLowerCase();
+
+      if (runLower.includes("fe_") || runLower.includes("frontend") || causeLower.includes("frontend") || causeLower.includes("dead click") || causeLower.includes("hydration")) {
+        assignedSlackId = "U02DACHEPALLY";
+        assignedRole = "Frontend Developer";
+        assignedHandle = "@Dachepally";
+      } else if (runLower.includes("be_") || runLower.includes("backend") || causeLower.includes("database") || causeLower.includes("npe") || causeLower.includes("pool")) {
+        assignedSlackId = "U04RAHULBACK";
+        assignedRole = "Backend Specialist";
+        assignedHandle = "@Rahul Verma";
+      } else if (runLower.includes("devops") || causeLower.includes("canary") || causeLower.includes("kubernetes") || causeLower.includes("crashloop")) {
+        assignedSlackId = "U05SAMDEVOPS";
+        assignedRole = "DevOps Specialist";
+        assignedHandle = "@Sam Taylor";
+      } else if (runLower.includes("sys_") || isNotify || causeLower.includes("contradict") || causeLower.includes("desync")) {
+        assignedSlackId = "U03NITHISHSYS";
+        assignedRole = "System Designer";
+        assignedHandle = "@Nithish gajjela";
+      } else {
+        assignedSlackId = "U01ROHITHADMIN";
+        assignedRole = "Admin / Project Lead";
+        assignedHandle = "@Rohith D";
+      }
     }
 
     if (assessment_status === "supported" && isAllowedAction) {
