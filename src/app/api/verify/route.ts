@@ -20,17 +20,21 @@ export async function POST(req: NextRequest) {
 
     // After 2 polls, simulate 3 consecutive fresh healthy samples
     if (currentCount >= 2) {
+      const hash = runId.split("").reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
+      const baseErr = ((hash % 5 + 2) / 1000); // 0.002 - 0.006 (0.2% - 0.6%)
+      const baseLat = 85 + (hash % 40); // 85 - 124ms
+
       return NextResponse.json({
         run_id: runId,
         verdict: "recovered",
         consecutive_healthy: 3,
-        error_rate: 0.006,
-        p95_ms: 108,
+        error_rate: baseErr,
+        p95_ms: baseLat,
         status: "healthy",
         samples: [
-          { error_rate: 0.007, p95_ms: 112, healthy: true },
-          { error_rate: 0.006, p95_ms: 109, healthy: true },
-          { error_rate: 0.005, p95_ms: 104, healthy: true },
+          { error_rate: baseErr + 0.001, p95_ms: baseLat + 4, healthy: true },
+          { error_rate: baseErr, p95_ms: baseLat, healthy: true },
+          { error_rate: Math.max(0.001, baseErr - 0.001), p95_ms: baseLat - 3, healthy: true },
         ],
         verified_at: new Date().toISOString(),
       });

@@ -20,18 +20,29 @@ export async function POST(req: NextRequest) {
     let recommended_action = body.recommended_action || "rollback_latest_deploy";
     let fallback_action = body.fallback_action || "disable_demo_feature_flag";
 
-    // Scenario awareness via run_id tagging or active run state
-    const isAsk = active?.scenario === "ask" || run_id.includes("ask") || run_id.includes("memory") || run_id.includes("approval");
-    const isNotify = active?.scenario === "notify" || run_id.includes("notify") || run_id.includes("contradict") || run_id.includes("escalat") || run_id.includes("noise");
+    // Priority 1: Check explicit run_id substrings or active scenario
+    const isNotify =
+      run_id.includes("notify") ||
+      run_id.includes("contradict") ||
+      run_id.includes("escalat") ||
+      run_id.includes("noise") ||
+      (!body.run_id && active?.scenario === "notify");
 
-    if (isAsk) {
+    const isAsk =
+      !isNotify &&
+      (run_id.includes("ask") ||
+        run_id.includes("memory") ||
+        run_id.includes("approval") ||
+        (!body.run_id && active?.scenario === "ask"));
+
+    if (isNotify) {
+      assessment_status = "contradictory";
+      candidate_cause = "Conflicting telemetry: CPU saturation on primary node with nominal query latency and zero external traffic.";
+    } else if (isAsk) {
       assessment_status = "uncertain";
       candidate_cause = "Gradual cluster memory exhaustion over 48h; unconfirmed leak origin across microservices.";
       recommended_action = "restart_demo_service";
       fallback_action = "disable_demo_feature_flag";
-    } else if (isNotify) {
-      assessment_status = "contradictory";
-      candidate_cause = "Conflicting telemetry: CPU saturation on primary node with nominal query latency and zero external traffic.";
     }
 
     const allowedCatalogue = [
