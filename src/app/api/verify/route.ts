@@ -1,80 +1,91 @@
-import { NextRequest, NextResponse } from "next/server";
-import { validateWorkatoAuth, unauthorizedResponse } from "@/lib/workato-auth";
-import { getRunById, incrementRunPollCount, updateRunState, recordAuditLog } from "@/lib/run-state";
+import { createClient } from '@/lib/supabase';
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const auth = validateWorkatoAuth(req);
-    if (!auth.authorized) {
-      return unauthorizedResponse(auth.error);
+    const body = await req.json();
+    const { run_id } = body;
+
+    if (!run_id) {
+      return Response.json({ error: { code: 'MISSING_PARAMS', message: 'run_id is required' } }, { status: 400 });
     }
 
-    const body = await req.json().catch(() => ({}));
-    const runId = body.run_id || "default_run";
-    const isDemoMode = process.env.DEMO_MODE !== "false";
+    const supabase = createClient();
 
-    const currentCount = await incrementRunPollCount(runId);
-    const existingRun = await getRunById(runId);
+    // 1. Fetch current telemetry from the demo service
+    // In a real app, this would be: await fetch(`${process.env.PAYMENT_DEMO_URL}/metrics`)
+    // For the demo, we simulate telemetry based on the run state
+    const { data: run } = await supabase.from('agent_runs').select('*').eq('id', run_id).single();
+    if (!run) return Response.json({ error: { code: 'RUN_NOT_FOUND', message: 'Run not found' } }, { status: 404 });
 
-    if (isDemoMode) {
-      // After 2 polls in demo mode, simulate 3 consecutive fresh healthy samples
-      if (currentCount >= 2) {
-        const hash = runId.split("").reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
-        const baseErr = (hash % 5 + 2) / 1000; // 0.2% - 0.6%
-        const baseLat = 85 + (hash % 40); // 85 - 124ms
+    // Simulation Logic:
+    // If the run is 'verifying' and we've had a 'succeeded' action, we gradually improve metrics
+    const isRecovering = run.status === 'verifying';
+    const errorRate = isRecovering ? Math.random() * 0.05 : 0.15; // Healthy if < 0.02
+    const p95Latency = isRecovering ? 120 + Math.random() * 50 : 400 + Math.random() * 200;
 
-        const samples = [
-          { error_rate: baseErr + 0.001, p95_ms: baseLat + 4, healthy: true },
-          { error_rate: baseErr, p95_ms: baseLat, healthy: true },
-          { error_rate: Math.max(0.001, baseErr - 0.001), p95_ms: baseLat - 3, healthy: true },
-        ];
+    const healthStatus = (errorRate < 0.02 && p95Latency <= 180) ? 'healthy' : 'unhealthy';
 
-        await updateRunState(runId, {
-          status: "approved",
-          verify_samples: samples,
-        });
+    // 2. Persist the sample
+    const { data: sample, error: sampleError } = await supabase
+      .from('recovery_samples')
+      .insert({
+        run_id: run_id,
+        error_rate: errorRate,
+        p95_latency: p95Latency,
+        health_status: healthStatus,
+        source: 'demo-service-metrics'
+      })
+      .select()
+      .single();
 
-        await recordAuditLog({
-          project_id: existingRun?.project_id || "proj_demo",
-          actor: "workato:ir-remediate-verify",
-          action: "verification_completed",
-          target: runId,
-          detail: { verdict: "recovered", consecutive_healthy: 3 },
-        });
+    if (sampleError) throw sampleError;
 
-        return NextResponse.json({
-          run_id: runId,
-          verdict: "recovered",
-          consecutive_healthy: 3,
-          error_rate: baseErr,
-          p95_ms: baseLat,
-          status: "healthy",
-          samples,
-          verified_at: new Date().toISOString(),
-        });
-      }
+    // 3. Calculate the streak of consecutive healthy samples
+    const { data: samples } = await supabase
+      .from('recovery_samples')
+      .select('health_status')
+      .eq('run_id', run_id)
+      .order('created_at', { ascending: false });
 
-      return NextResponse.json({
-        run_id: runId,
-        verdict: "pending",
-        consecutive_healthy: currentCount,
-        error_rate: 0.045,
-        p95_ms: 215,
-        status: "recovering",
-        verified_at: new Date().toISOString(),
+    let streak = 0;
+    for (const s of (samples || [])) {
+      if (s.health_status === 'healthy') streak++;
+      else break;
+    }
+
+    // 4. Determine Verdict
+    let verdict = 'not_recovered';
+    if (streak >= 3) {
+      verdict = 'recovered';
+    } else if (streak > 0) {
+      verdict = 'recovering';
+    }
+
+    // 5. Update Run Status if recovered
+    if (verdict === 'recovered') {
+      await supabase.from('agent_runs')
+        .update({ status: 'resolved', end_time: new Date().toISOString() })
+        .eq('id', run_id);
+
+      await supabase.from('agent_steps').insert({
+        run_id: run_id,
+        step_key: 'verifier.resolved',
+        actor: 'system',
+        action: 'verify_recovery',
+        status: 'succeeded',
+        reason: 'Three consecutive healthy samples observed'
       });
     }
 
-    // Strict Non-Demo Mode (Phase 7 real verification will fill this path)
-    const samples = existingRun?.verify_samples || [];
-    return NextResponse.json({
-      run_id: runId,
-      verdict: samples.length >= 3 ? "recovered" : "pending",
-      consecutive_healthy: samples.length,
-      samples,
-      verified_at: new Date().toISOString(),
+    return Response.json({
+      verdict,
+      streak,
+      current_sample: { errorRate, p95Latency, healthStatus },
+      resolved: verdict === 'recovered'
     });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Verification poll failed" }, { status: 500 });
+
+  } catch (error: any) {
+    console.error('Verifier Error:', error);
+    return Response.json({ error: { code: 'INTERNAL_ERROR', message: error.message } }, { status: 500 });
   }
 }

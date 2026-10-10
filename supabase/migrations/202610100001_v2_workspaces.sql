@@ -14,7 +14,7 @@ end $$;
 
 -- ============ PROFILES ============
 create table if not exists public.profiles (
-  id uuid primary key references auth.users(id) on delete cascade,
+  id uuid primary key default gen_random_uuid(),
   github_login text unique,
   github_id bigint unique,
   display_name text,
@@ -123,6 +123,6 @@ returns boolean language sql stable security definer set search_path = public as
     where pm.project_id = p and pm.user_id = auth.uid() and pm.role >= min_role
   ) or exists (
     select 1 from projects pr join org_members om on om.org_id = pr.org_id
-    where pr.id = p and om.user_id = auth.uid() and om.role >= 'admin'
+    where pr.id = p and om.user_id = auth.uid() and om.role >= 'admin'::org_role
   );
 $$;
