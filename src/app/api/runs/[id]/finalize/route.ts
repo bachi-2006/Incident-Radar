@@ -74,6 +74,7 @@ export async function POST(
       outcome,
       receipt_hash: receiptHash,
       slack_text,
+      slack_channel: "C0C88MA3JAE",
       finalized_at: new Date().toISOString(),
     });
   } catch (err: any) {

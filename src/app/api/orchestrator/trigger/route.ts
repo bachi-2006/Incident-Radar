@@ -76,6 +76,7 @@ export async function POST(req: NextRequest) {
         run_id,
         incident_id,
         evidence,
+        permitted_actions,
         // Map dynamic Slack ID based on scenario or client payload
         assigned_user_slack_id: body.assigned_user_slack_id || (scenario === "ask" ? "U01ROHITHADMIN" : scenario === "notify" ? "U03NITHISHSYS" : "U02DACHEPALLY"),
         assigned_user_name: body.assigned_user_name || (scenario === "ask" ? "Rohith D" : scenario === "notify" ? "Nithish gajjela" : "Dachepally"),
