@@ -1,18 +1,38 @@
 import { createClient } from '@/lib/supabase';
 import { calculateEvidenceGrade, evaluatePolicy, POLICY_VERSION } from '@/lib/policy';
-import { z } from 'zod';
+interface TriageData {
+  assessment_status: 'supported' | 'uncertain' | 'contradictory' | 'insufficient_data';
+  candidate_cause: string;
+  evidence_for: string[];
+  evidence_against: string[];
+  missing_evidence: string[];
+  recommended_action: string;
+  fallback_action?: string;
+  reasoning_summary: string;
+  limitations: string[];
+}
 
-const TriageSchema = z.object({
-  assessment_status: z.enum(['supported', 'uncertain', 'contradictory', 'insufficient_data']),
-  candidate_cause: z.string(),
-  evidence_for: z.array(z.string()),
-  evidence_against: z.array(z.string()),
-  missing_evidence: z.array(z.string()),
-  recommended_action: z.string(),
-  fallback_action: z.string().optional(),
-  reasoning_summary: z.string(),
-  limitations: z.array(z.string()),
-});
+function parseTriage(input: any): { success: boolean; data: TriageData } {
+  if (!input || typeof input !== 'object') {
+    return { success: false, data: {} as TriageData };
+  }
+  const validStatuses = ['supported', 'uncertain', 'contradictory', 'insufficient_data'];
+  const status = validStatuses.includes(input.assessment_status) ? input.assessment_status : 'uncertain';
+  return {
+    success: true,
+    data: {
+      assessment_status: status as any,
+      candidate_cause: String(input.candidate_cause || input.likely_cause || 'Unknown cause'),
+      evidence_for: Array.isArray(input.evidence_for) ? input.evidence_for.map(String) : [],
+      evidence_against: Array.isArray(input.evidence_against) ? input.evidence_against.map(String) : [],
+      missing_evidence: Array.isArray(input.missing_evidence) ? input.missing_evidence.map(String) : [],
+      recommended_action: String(input.recommended_action || 'rollback_latest_deploy'),
+      fallback_action: input.fallback_action ? String(input.fallback_action) : undefined,
+      reasoning_summary: String(input.reasoning_summary || ''),
+      limitations: Array.isArray(input.limitations) ? input.limitations.map(String) : [String(input.limitations || '')],
+    }
+  };
+}
 
 export async function POST(req: Request) {
   try {
@@ -24,7 +44,7 @@ export async function POST(req: Request) {
     }
 
     // 1. Validate Genie Output
-    const parsedTriage = TriageSchema.safeParse(triage_output);
+    const parsedTriage = parseTriage(triage_output);
     if (!parsedTriage.success) {
       return Response.json({ error: { code: 'INVALID_TRIAGE', message: 'Genie output failed schema validation' } }, { status: 400 });
     }
