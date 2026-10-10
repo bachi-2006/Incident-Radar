@@ -1,5 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { setActiveRun } from "@/lib/run-state";
+import {
+  computeRuleScores,
+  combineCategoryScores,
+  computeCandidateFit,
+  computeAssignmentConfidence,
+  MemberProfile,
+  EvidenceContext,
+} from "../../../../../assignment-engine";
+import { DEMO_MEMBERS } from "../../../../../scripts/seed-team";
+import { supabaseAdmin } from "@/lib/supabase";
 
 function corsHeaders() {
   return {
@@ -258,11 +268,82 @@ export async function POST(req: NextRequest) {
       assignedName = "Rohith D";
     }
 
-    // Override with explicit client parameters if provided
-    if (body.assigned_user_slack_id) assignedSlackId = body.assigned_user_slack_id;
-    if (body.assigned_user_name) assignedName = body.assigned_user_name;
+    // ==========================================
+    // Real Area-Based Assignment Engine:
+    // Extract evidence text & context to calculate category & candidate fit
+    // ==========================================
     if (Array.isArray(body.evidence) && body.evidence.length > 0) evidence = body.evidence;
     if (Array.isArray(body.permitted_actions) && body.permitted_actions.length > 0) permitted_actions = body.permitted_actions;
+
+    const evidenceText = evidence.map((e) => (typeof e === "string" ? e : (e as any).item || "")).join(" ");
+    const evidenceContext: EvidenceContext = {
+      messages: [evidenceText],
+      files: [],
+      silent_kinds: [],
+      affected_services: ["payment-gateway"],
+    };
+
+    if (evidenceText.toLowerCase().includes("dead click") || scenario.includes("dead_click") || scenario.includes("fe_")) {
+      evidenceContext.silent_kinds = ["dead_click"];
+      evidenceContext.files = ["src/components/CheckoutButton.tsx", "public/bundle.js"];
+    } else if (evidenceText.toLowerCase().includes("hydration") || scenario.includes("hydration")) {
+      evidenceContext.files = ["src/app/page.tsx", "src/components/PaymentModal.tsx"];
+    } else if (evidenceText.toLowerCase().includes("database") || evidenceText.toLowerCase().includes("pool")) {
+      evidenceContext.files = ["supabase/migrations/20261010_schema.sql"];
+    } else if (evidenceText.toLowerCase().includes("npe") || evidenceText.toLowerCase().includes("controller") || scenario.includes("be_")) {
+      evidenceContext.files = ["src/app/api/checkout/route.ts"];
+    } else if (evidenceText.toLowerCase().includes("canary") || evidenceText.toLowerCase().includes("deploy")) {
+      evidenceContext.files = [".github/workflows/deploy.yml"];
+    }
+
+    const ruleScores = computeRuleScores(evidenceContext);
+    const combinedScores = combineCategoryScores(ruleScores);
+    const calculatedCategory = (body.category || combinedScores.topCategory || "system_architecture").trim().toLowerCase().replace(/\s+/g, "_");
+
+    // Evaluate candidates across our 3-member team based on expertise and fit
+    const candidates = DEMO_MEMBERS.map((m) => {
+      const fitResult = computeCandidateFit(m as unknown as MemberProfile, calculatedCategory);
+      const conf = computeAssignmentConfidence(combinedScores.confidence, fitResult.fit);
+      return {
+        ...m,
+        ...fitResult,
+        confidence: conf,
+      };
+    }).sort((a, b) => b.confidence - a.confidence);
+
+    const topCandidate = candidates[0];
+
+    // Priority: Explicit client param > Top candidate from assignment engine
+    if (!body.assigned_user_slack_id && topCandidate) {
+      assignedSlackId = topCandidate.slack_user_id;
+      assignedName = topCandidate.display_name;
+    } else if (body.assigned_user_slack_id) {
+      assignedSlackId = body.assigned_user_slack_id;
+      if (body.assigned_user_name) assignedName = body.assigned_user_name;
+    }
+    const assignedRole = topCandidate?.role || "Responder";
+
+    // Persist assignment in Supabase for persistence and auditability
+    if (supabaseAdmin) {
+      try {
+        const assignmentId = `asgn_${timestamp}`;
+        await (supabaseAdmin as any).from("assignments").insert({
+          id: assignmentId,
+          project_id: "00000000-0000-0000-0000-000000000002",
+          kind: "incident",
+          incident_id,
+          category: calculatedCategory,
+          assignee_id: topCandidate.id,
+          confidence: topCandidate.confidence,
+          breakdown: topCandidate.breakdown,
+          candidates: candidates.slice(0, 3),
+          decision: "auto",
+          status: "assigned",
+        });
+      } catch (err: any) {
+        // Non-blocking
+      }
+    }
 
     const executionCategory = scenario.includes("ask") ? "ask" : scenario === "notify" ? "notify" : "act";
     setActiveRun(run_id, incident_id, executionCategory);
@@ -274,14 +355,17 @@ export async function POST(req: NextRequest) {
         "X-IR-Secret": secret,
       },
       body: JSON.stringify({
+        project_id: "00000000-0000-0000-0000-000000000002",
         run_id,
         incident_id,
+        category: calculatedCategory,
         evidence,
         permitted_actions,
         assigned_user_slack_id: assignedSlackId,
         assigned_user_name: assignedName,
-        slack_destination_type: "USER_DM", // Explicitly tell Workato to use a DM, not a channel
-        debug_routing_info: `Routing scenario ${scenario} to user ${assignedName} (${assignedSlackId})`
+        assigned_user_role: assignedRole,
+        slack_destination_type: "USER_DM",
+        debug_routing_info: `Assignment engine routed category '${calculatedCategory}' (${topCandidate.confidence}% confidence) to ${assignedName} (${assignedSlackId})`,
       }),
     });
 

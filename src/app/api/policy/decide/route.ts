@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
       decision = "NOTIFY";
       rule_id = "R7_ACTION_CONTEXT_MISMATCH";
       reason = "Contradictory evidence or unsupported action. Escalating to on-call engineer.";
-      slack_text = `🛑 *Incident Radar — Alert Escalated*\nRoot cause ambiguous (${candidate_cause}). Paging on-call team:\n• <@U02DACHEPALLY> (@Dachepally - Frontend Developer)\n• <@U03NITHISHSYS> (@Nithish gajjela - System Designer)\n• <@U01ROHITHADMIN> (@Rohith D - Admin)`;
+      slack_text = `🛑 *Incident Radar — Alert Escalated*\nRoot cause ambiguous (${candidate_cause}).\n• *Primary Assignee*: <@${assignedSlackId}> (${assignedHandle} - ${assignedRole})\n• *Escalation Roster*: <@U01ROHITHADMIN> (@Rohith D - Admin), <@U02DACHEPALLY> (@Dachepally - Frontend), <@U03NITHISHSYS> (@Nithish gajjela - System Designer)`;
     }
 
     // Persist run state in runs and audit_log
@@ -153,7 +153,10 @@ export async function POST(req: NextRequest) {
       policy_version: "v2-policy",
       reason,
       slack_text,
+      category: body.category || "system_architecture",
       assigned_user_slack_id: assignedSlackId,
+      assigned_user_name: assignedHandle.replace(/^@/, ""),
+      assigned_user_role: assignedRole,
       timestamp: new Date().toISOString(),
     });
   } catch (err: any) {
