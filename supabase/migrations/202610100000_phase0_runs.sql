@@ -5,7 +5,7 @@
 create table if not exists public.runs (
   id text primary key,
   project_id text,
-  incident_id text references public.incidents(id) on delete set null,
+  incident_id text,
   scenario text,
   decision text,
   rule_id text,

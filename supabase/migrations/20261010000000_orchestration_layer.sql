@@ -21,7 +21,7 @@ on conflict (id) do nothing;
 -- Tracks the lifecycle of a single remediation attempt
 create table if not exists public.agent_runs (
   id uuid primary key default gen_random_uuid(),
-  incident_id text not null references public.incidents(id) on delete cascade,
+  incident_id text not null,
   scenario text, -- e.g., 'autonomous-recovery', 'low-evidence-approval'
   status text not null default 'created'
     check (status in ('created', 'triaging', 'policy_decided', 'executing', 'awaiting_approval', 'verifying', 'resolved', 'escalated', 'failed', 'cancelled')),

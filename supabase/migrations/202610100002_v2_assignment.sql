@@ -14,7 +14,7 @@ create table if not exists public.project_category_owners (
 );
 
 create table if not exists public.issue_classifications (
-  incident_id text primary key references public.incidents(id) on delete cascade,
+  incident_id text primary key,
   category text not null references public.issue_categories(key),
   secondary_category text references public.issue_categories(key),
   category_confidence double precision not null,
@@ -47,7 +47,7 @@ create table if not exists public.assignments (
   id uuid primary key default gen_random_uuid(),
   project_id uuid references public.projects(id) on delete cascade,
   kind text not null default 'incident' check (kind in ('incident', 'readme_fix', 'project_ownership')),
-  incident_id text references public.incidents(id) on delete cascade,
+  incident_id text,
   category text references public.issue_categories(key),
   role_in_assignment text not null default 'primary',
   assignee_id uuid references public.profiles(id),

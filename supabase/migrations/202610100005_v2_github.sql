@@ -23,7 +23,7 @@ create table if not exists public.commits (
   symbols text[] not null default '{}',
   patch_excerpt text,
   risk_score double precision,
-  caused_incident_id text references public.incidents(id),
+  caused_incident_id text,
   created_at timestamptz not null default now()
 );
 

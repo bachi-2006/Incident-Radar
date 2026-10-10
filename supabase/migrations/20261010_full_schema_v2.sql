@@ -1,7 +1,7 @@
 -- ==============================================================================
--- INCIDENT RADAR v2 — COMPLETE SCHEMA & SEED MIGRATION
+-- INCIDENT RADAR v2 — COMPLETE SCHEMA & SEED MIGRATION (FIXED FOR SUPABASE)
 -- Run this in the Supabase Dashboard SQL Editor (https://supabase.com/dashboard/project/xaqorfvcgowdhnyrtiig/sql)
--- Safe & Idempotent (Uses IF NOT EXISTS and ON CONFLICT DO NOTHING / UPDATE)
+-- Safe & Idempotent (Uses IF NOT EXISTS, compatible types, and ON CONFLICT DO NOTHING / UPDATE)
 -- ==============================================================================
 
 create extension if not exists "pgcrypto";
@@ -19,80 +19,12 @@ do $$ begin
 end $$;
 
 -- ==============================================================================
--- 2. BASE INCIDENT RADAR TABLES (If not already present)
--- ==============================================================================
-create table if not exists public.incidents (
-  id text primary key,
-  title text not null,
-  severity text not null check (severity in ('info', 'low', 'medium', 'high', 'critical')),
-  confidence double precision not null default 0 check (confidence >= 0 and confidence <= 100),
-  status text not null default 'active' check (status in ('active', 'investigating', 'resolved', 'mitigated')),
-  service text not null,
-  description text,
-  root_cause text,
-  start_time timestamptz not null default now(),
-  end_time timestamptz,
-  correlated_count integer not null default 0,
-  affected_services text[] not null default '{}',
-  metadata jsonb not null default '{}'::jsonb,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
-create table if not exists public.events (
-  id text primary key,
-  incident_id text references public.incidents(id) on delete set null,
-  service text not null,
-  source text not null,
-  event_type text not null,
-  message text not null,
-  severity text not null check (severity in ('info', 'low', 'medium', 'high', 'critical')),
-  timestamp timestamptz not null default now(),
-  metric text,
-  value double precision,
-  metadata jsonb not null default '{}'::jsonb,
-  created_at timestamptz not null default now()
-);
-
-create table if not exists public.event_relationships (
-  id uuid primary key default gen_random_uuid(),
-  incident_id text not null references public.incidents(id) on delete cascade,
-  from_event_id text not null,
-  to_event_id text not null,
-  relationship_type text not null default 'PRECEDES' check (relationship_type in ('PRECEDES', 'CAUSES', 'CORRELATES_WITH', 'BLOCKS')),
-  confidence double precision not null default 1.0,
-  description text,
-  created_at timestamptz not null default now(),
-  unique (incident_id, from_event_id, to_event_id, relationship_type)
-);
-
-create table if not exists public.operational_events (
-  id uuid primary key default gen_random_uuid(),
-  event_type text not null,
-  source text not null,
-  severity text not null,
-  payload jsonb not null default '{}'::jsonb,
-  created_at timestamptz not null default now()
-);
-
-create table if not exists public.ai_analyses (
-  id uuid primary key default gen_random_uuid(),
-  incident_id text references public.incidents(id) on delete cascade,
-  model text not null,
-  analysis_type text not null,
-  summary text,
-  recommendations jsonb default '[]'::jsonb,
-  raw_response jsonb default '{}'::jsonb,
-  created_at timestamptz not null default now()
-);
-
--- ==============================================================================
--- 3. RUNS & AUDIT LOG (Phase 0)
+-- 2. RUNS & AUDIT LOG (Phase 0)
 -- ==============================================================================
 create table if not exists public.runs (
   id text primary key,
   project_id text,
-  incident_id text references public.incidents(id) on delete set null,
+  incident_id text,
   scenario text,
   decision text,
   rule_id text,
@@ -117,12 +49,13 @@ create table if not exists public.audit_log (
   created_at timestamptz not null default now()
 );
 
+create index if not exists idx_runs_incident on public.runs(incident_id);
 create index if not exists idx_runs_status on public.runs(status);
 create index if not exists idx_runs_updated_at on public.runs(updated_at desc);
 create index if not exists idx_audit_log_target on public.audit_log(target, created_at desc);
 
 -- ==============================================================================
--- 4. ORCHESTRATION & AGENT EXECUTION LAYER
+-- 3. ORCHESTRATION & AGENT EXECUTION LAYER
 -- ==============================================================================
 create table if not exists public.settings (
   id text primary key default 'global_settings',
@@ -138,7 +71,7 @@ on conflict (id) do nothing;
 
 create table if not exists public.agent_runs (
   id uuid primary key default gen_random_uuid(),
-  incident_id text not null references public.incidents(id) on delete cascade,
+  incident_id text not null,
   scenario text,
   status text not null default 'created'
     check (status in ('created', 'triaging', 'policy_decided', 'executing', 'awaiting_approval', 'verifying', 'resolved', 'escalated', 'failed', 'cancelled')),
@@ -221,7 +154,7 @@ create index if not exists idx_approvals_run on public.approvals (run_id);
 create index if not exists idx_samples_run on public.recovery_samples (run_id);
 
 -- ==============================================================================
--- 5. WORKSPACES, PROFILES & TEAMS
+-- 4. WORKSPACES, PROFILES & TEAMS
 -- ==============================================================================
 create table if not exists public.profiles (
   id uuid primary key default gen_random_uuid(),
@@ -305,7 +238,7 @@ create table if not exists public.member_expertise (
 );
 
 -- ==============================================================================
--- 6. GITHUB, REPOSITORIES, COMMITS & DEPLOYS
+-- 5. GITHUB, REPOSITORIES, COMMITS & DEPLOYS
 -- ==============================================================================
 create table if not exists public.repositories (
   id uuid primary key default gen_random_uuid(),
@@ -328,7 +261,7 @@ create table if not exists public.commits (
   symbols text[] not null default '{}',
   patch_excerpt text,
   risk_score double precision,
-  caused_incident_id text references public.incidents(id),
+  caused_incident_id text,
   created_at timestamptz not null default now()
 );
 
@@ -362,7 +295,7 @@ create index if not exists idx_ci_runs_project_date on public.ci_runs(project_id
 create index if not exists idx_deployments_project_date on public.deployments(project_id, created_at desc);
 
 -- ==============================================================================
--- 7. README QUALITY CHECKS
+-- 6. README QUALITY CHECKS
 -- ==============================================================================
 create table if not exists public.readme_checks (
   id uuid primary key default gen_random_uuid(),
@@ -383,7 +316,7 @@ create table if not exists public.readme_checks (
 create index if not exists idx_readme_checks_project_created on public.readme_checks(project_id, created_at desc);
 
 -- ==============================================================================
--- 8. ASSIGNMENT, CLASSIFICATION, SLA & REMINDERS
+-- 7. ASSIGNMENT, CLASSIFICATION, SLA & REMINDERS
 -- ==============================================================================
 create table if not exists public.project_category_owners (
   project_id uuid references public.projects(id) on delete cascade,
@@ -397,7 +330,7 @@ create table if not exists public.project_category_owners (
 );
 
 create table if not exists public.issue_classifications (
-  incident_id text primary key references public.incidents(id) on delete cascade,
+  incident_id text primary key,
   category text not null references public.issue_categories(key),
   secondary_category text references public.issue_categories(key),
   category_confidence double precision not null,
@@ -421,7 +354,7 @@ create table if not exists public.assignments (
   id uuid primary key default gen_random_uuid(),
   project_id uuid references public.projects(id) on delete cascade,
   kind text not null default 'incident' check (kind in ('incident', 'readme_fix', 'project_ownership')),
-  incident_id text references public.incidents(id) on delete cascade,
+  incident_id text,
   category text references public.issue_categories(key),
   role_in_assignment text not null default 'primary',
   assignee_id uuid references public.profiles(id),
@@ -456,7 +389,7 @@ create index if not exists idx_assignments_status_due on public.assignments(stat
 create index if not exists idx_reminders_sent_due on public.reminders(sent_at, due_at);
 
 -- ==============================================================================
--- 9. SYNTHETIC MONITORS & PROBE RESULTS
+-- 8. SYNTHETIC MONITORS & PROBE RESULTS
 -- ==============================================================================
 create table if not exists public.monitors (
   id uuid primary key default gen_random_uuid(),
@@ -511,7 +444,7 @@ create table if not exists public.hourly_stats (
 create index if not exists idx_probe_results_project_checked on public.probe_results(project_id, checked_at desc);
 
 -- ==============================================================================
--- 10. ROW LEVEL SECURITY (RLS) POLICIES
+-- 9. ROW LEVEL SECURITY (RLS) POLICIES
 -- ==============================================================================
 alter table public.runs enable row level security;
 alter table public.audit_log enable row level security;
@@ -547,27 +480,55 @@ alter table public.hourly_stats enable row level security;
 do $$
 declare
   t text;
+  tbls text[] := array[
+    'runs', 'audit_log', 'settings', 'agent_runs', 'agent_steps', 
+    'action_executions', 'approvals', 'recovery_samples', 'profiles', 
+    'organizations', 'org_members', 'projects', 'project_members', 
+    'invitations', 'issue_categories', 'member_expertise', 'repositories', 
+    'commits', 'ci_runs', 'deployments', 'readme_checks', 
+    'project_category_owners', 'issue_classifications', 'sla_policies', 
+    'assignments', 'reminders', 'monitors', 'probe_results', 'hourly_stats'
+  ];
 begin
-  for t in select tablename from pg_tables where schemaname = 'public' loop
+  foreach t in array tbls loop
     execute format('drop policy if exists "Allow service role all access on %I" on public.%I;', t, t);
     execute format('create policy "Allow service role all access on %I" on public.%I for all using (true) with check (true);', t, t);
   end loop;
 end $$;
 
 -- Public read policies for dashboard and client access
+drop policy if exists "Allow public read on settings" on public.settings;
 create policy "Allow public read on settings" on public.settings for select using (true);
+
+drop policy if exists "Allow public read on agent_runs" on public.agent_runs;
 create policy "Allow public read on agent_runs" on public.agent_runs for select using (true);
+
+drop policy if exists "Allow public read on agent_steps" on public.agent_steps;
 create policy "Allow public read on agent_steps" on public.agent_steps for select using (true);
+
+drop policy if exists "Allow public read on action_executions" on public.action_executions;
 create policy "Allow public read on action_executions" on public.action_executions for select using (true);
+
+drop policy if exists "Allow public read on approvals" on public.approvals;
 create policy "Allow public read on approvals" on public.approvals for select using (true);
+
+drop policy if exists "Allow public read on recovery_samples" on public.recovery_samples;
 create policy "Allow public read on recovery_samples" on public.recovery_samples for select using (true);
+
+drop policy if exists "Allow public read on profiles" on public.profiles;
 create policy "Allow public read on profiles" on public.profiles for select using (true);
+
+drop policy if exists "Allow public read on projects" on public.projects;
 create policy "Allow public read on projects" on public.projects for select using (true);
+
+drop policy if exists "Allow public read on issue_categories" on public.issue_categories;
 create policy "Allow public read on issue_categories" on public.issue_categories for select using (true);
+
+drop policy if exists "Allow public read on assignments" on public.assignments;
 create policy "Allow public read on assignments" on public.assignments for select using (true);
 
 -- ==============================================================================
--- 11. SEED DATA & TEAMS SETUP
+-- 10. SEED DATA & TEAMS SETUP
 -- ==============================================================================
 
 -- Categories
