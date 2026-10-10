@@ -281,20 +281,20 @@ export default function BrokenCheckoutDemoPage() {
 
           <div className="bg-slate-900/60 border border-slate-800 p-4 rounded-xl">
             <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
-              <span>Frontend Assignee</span>
+              <span>Predicted Domain</span>
               <Activity className="w-3.5 h-3.5 text-cyan-400" />
             </div>
-            <div className="text-base font-bold text-slate-100 truncate">Dachepally</div>
-            <div className="text-[11px] text-cyan-400/90 font-mono mt-1">@Dachepally (Frontend Dev)</div>
+            <div className="text-base font-bold text-slate-100 truncate">Frontend Domain</div>
+            <div className="text-[11px] text-cyan-400/90 font-mono mt-1">Autonomous DM Routing Active</div>
           </div>
 
           <div className="bg-slate-900/60 border border-slate-800 p-4 rounded-xl">
             <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
-              <span>Sys Designer Assignee</span>
+              <span>System Architecture</span>
               <ServerCrash className="w-3.5 h-3.5 text-purple-400" />
             </div>
-            <div className="text-base font-bold text-slate-100 truncate">Nithish</div>
-            <div className="text-[11px] text-purple-400/90 font-mono mt-1">@Nithish (System Designer)</div>
+            <div className="text-base font-bold text-slate-100 truncate">Backend & Systems</div>
+            <div className="text-[11px] text-purple-400/90 font-mono mt-1">Autonomous DM Routing Active</div>
           </div>
         </div>
 
@@ -406,7 +406,7 @@ export default function BrokenCheckoutDemoPage() {
             </div>
 
             <div className="pt-4 border-t border-slate-800 text-[11px] text-slate-500 flex items-center justify-between">
-              <span>Admin: @Rohith D</span>
+              <span>Admin: Project Lead (On-Call)</span>
               <span className="text-emerald-400">SDK Scrubbing: PII Stripped</span>
             </div>
           </div>
