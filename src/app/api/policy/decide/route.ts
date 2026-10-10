@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
     const baseUrl = process.env.APP_BASE_URL || "https://incident-radar.onrender.com";
 
     // Person-specific routing based on scenario and cause
-    let assignedSlackId = body.assigned_user_slack_id || "U01ROHITHADMIN";
+    let assignedSlackId = body.assigned_user_slack_id || "U0C846MT30D";
     let assignedRole = body.assigned_user_role || "Admin / Project Lead";
     let assignedHandle = body.assigned_user_name ? `@${body.assigned_user_name}` : "@Rohith D";
 
@@ -78,15 +78,15 @@ export async function POST(req: NextRequest) {
       const runLower = run_id.toLowerCase();
 
       if (runLower.includes("fe_") || runLower.includes("frontend") || causeLower.includes("frontend") || causeLower.includes("dead click") || causeLower.includes("hydration") || causeLower.includes("chunk")) {
-        assignedSlackId = "U02DACHEPALLY";
+        assignedSlackId = "U0C7TNSNS5D";
         assignedRole = "Frontend Developer";
         assignedHandle = "@Dachepally";
       } else if (runLower.includes("be_") || runLower.includes("backend") || runLower.includes("sys_") || causeLower.includes("database") || causeLower.includes("npe") || causeLower.includes("pool") || causeLower.includes("redis") || causeLower.includes("kafka") || causeLower.includes("desync")) {
-        assignedSlackId = "U03NITHISHSYS";
+        assignedSlackId = "U0C9380GASU";
         assignedRole = "Backend Developer / System Designer";
         assignedHandle = "@Nithish gajjela";
       } else {
-        assignedSlackId = "U01ROHITHADMIN";
+        assignedSlackId = "U0C846MT30D";
         assignedRole = "Admin / Project Lead";
         assignedHandle = "@Rohith D";
       }
@@ -157,7 +157,7 @@ export async function POST(req: NextRequest) {
         `*Incident*: ${candidate_cause}\n` +
         `*Service*: \`${targetService}\`\n\n` +
         `*Primary Assignee*: <@${assignedSlackId}> (${assignedHandle} - ${assignedRole})\n` +
-        `*Escalation Roster*: <@U01ROHITHADMIN> (@Rohith D - Admin), <@U02DACHEPALLY> (@Dachepally - Frontend), <@U03NITHISHSYS> (@Nithish gajjela - System Designer)`;
+        `*Escalation Roster*: <@U0C846MT30D> (@Rohith D - Admin), <@U0C7TNSNS5D> (@Dachepally - Frontend), <@U0C9380GASU> (@Nithish gajjela - System Designer)`;
       slack_channel_summary = `🛑 *Incident ${incident_id} Escalated* to on-call roster. Primary: ${assignedHandle}. Investigation required.`;
     }
 

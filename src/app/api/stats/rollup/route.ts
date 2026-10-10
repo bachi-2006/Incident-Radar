@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
       `• *Client Errors*: ${stats.client_error_count} captured via SDK\n` +
       `• *CI/CD*: ${stats.ci_runs} runs (${(stats.ci_pass_rate * 100).toFixed(0)}% pass rate) | Deploys: ${stats.deploys}\n` +
       `• *Incidents*: ${stats.incidents_opened} opened, ${stats.incidents_resolved} resolved (MTTR: ${stats.mttr_minutes}m)\n` +
-      `• *Admin*: <@U01ROHITHADMIN> (Rohith D) | <${baseUrl}/stats|View Live Dashboard>`;
+      `• *Admin*: <@U0C846MT30D> (Rohith D) | <${baseUrl}/stats|View Live Dashboard>`;
 
     return NextResponse.json({
       projects: [

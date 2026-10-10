@@ -53,11 +53,11 @@ export async function POST(req: NextRequest) {
       "disable_demo_feature_flag",
       "restart_demo_service",
     ];
-    let assignedSlackId = "U01ROHITHADMIN";
+    let assignedSlackId = "U0C846MT30D";
     let assignedName = "Rohith D";
 
     // ==========================================
-    // 🎨 FRONTEND INCIDENTS -> @Dachepally (U02DACHEPALLY)
+    // 🎨 FRONTEND INCIDENTS -> @Dachepally (U0C7TNSNS5D)
     // ==========================================
     if (scenario === "fe_dead_click" || scenario === "dead_click" || scenario === "fe_act") {
       run_id = `run_fe_act_${timestamp}`;
@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
         { item: "Canary deploy fe-v1.8.2 introduced React state freeze on payment form" },
       ];
       permitted_actions = ["rollback_latest_deploy", "disable_demo_feature_flag"];
-      assignedSlackId = "U02DACHEPALLY";
+      assignedSlackId = "U0C7TNSNS5D";
       assignedName = "Dachepally";
     } else if (scenario === "fe_hydration") {
       run_id = `run_fe_hydration_${timestamp}`;
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
         { item: "Regression introduced in latest frontend asset build fe-v1.8.2" },
       ];
       permitted_actions = ["rollback_latest_deploy", "disable_demo_feature_flag"];
-      assignedSlackId = "U02DACHEPALLY";
+      assignedSlackId = "U0C7TNSNS5D";
       assignedName = "Dachepally";
     } else if (scenario === "fe_chunk_404") {
       run_id = `run_fe_chunk_${timestamp}`;
@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
         { item: "340 users trapped in White Screen of Death on checkout load" },
       ];
       permitted_actions = ["rollback_latest_deploy", "restart_demo_service"];
-      assignedSlackId = "U02DACHEPALLY";
+      assignedSlackId = "U0C7TNSNS5D";
       assignedName = "Dachepally";
     } else if (scenario === "fe_quota") {
       run_id = `run_fe_quota_${timestamp}`;
@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
         { item: "Safe fallback: disable aggressive client telemetry feature flag" },
       ];
       permitted_actions = ["disable_demo_feature_flag", "rollback_latest_deploy"];
-      assignedSlackId = "U02DACHEPALLY";
+      assignedSlackId = "U0C7TNSNS5D";
       assignedName = "Dachepally";
     } else if (scenario === "fe_calc_drift") {
       run_id = `run_fe_calc_drift_ask_${timestamp}`;
@@ -112,7 +112,7 @@ export async function POST(req: NextRequest) {
         { item: "Blast radius uncertain: disabling tax optimization flag requires human sign-off" },
       ];
       permitted_actions = ["disable_demo_feature_flag", "restart_demo_service"];
-      assignedSlackId = "U02DACHEPALLY";
+      assignedSlackId = "U0C7TNSNS5D";
       assignedName = "Dachepally";
     } else if (scenario === "fe_csp_violation") {
       run_id = `run_fe_csp_ask_${timestamp}`;
@@ -123,12 +123,12 @@ export async function POST(req: NextRequest) {
         { item: "Modifying security header requires human engineer review" },
       ];
       permitted_actions = ["disable_demo_feature_flag", "rollback_latest_deploy"];
-      assignedSlackId = "U02DACHEPALLY";
+      assignedSlackId = "U0C7TNSNS5D";
       assignedName = "Dachepally";
     }
 
     // ==========================================
-    // ⚙️ BACKEND / SYSTEM INCIDENTS -> @Nithish gajjela (U03NITHISHSYS)
+    // ⚙️ BACKEND / SYSTEM INCIDENTS -> @Nithish gajjela (U0C9380GASU)
     // ==========================================
     else if (scenario === "be_db_pool" || scenario === "be_act" || scenario === "database") {
       run_id = `run_be_db_act_${timestamp}`;
@@ -139,7 +139,7 @@ export async function POST(req: NextRequest) {
         { item: "Correlates directly with deployment of payment-api v2.4.1" },
       ];
       permitted_actions = ["rollback_latest_deploy", "restart_demo_service"];
-      assignedSlackId = "U03NITHISHSYS";
+      assignedSlackId = "U0C9380GASU";
       assignedName = "Nithish gajjela";
     } else if (scenario === "be_npe") {
       run_id = `run_be_npe_act_${timestamp}`;
@@ -150,7 +150,7 @@ export async function POST(req: NextRequest) {
         { item: "Database and network health nominal (12ms), confirmed application defect" },
       ];
       permitted_actions = ["rollback_latest_deploy", "disable_demo_feature_flag"];
-      assignedSlackId = "U03NITHISHSYS";
+      assignedSlackId = "U0C9380GASU";
       assignedName = "Nithish gajjela";
     } else if (scenario === "be_slow_query") {
       run_id = `run_be_slow_query_act_${timestamp}`;
@@ -161,7 +161,7 @@ export async function POST(req: NextRequest) {
         { item: "Introduced in recent database schema change script" },
       ];
       permitted_actions = ["rollback_latest_deploy", "restart_demo_service"];
-      assignedSlackId = "U03NITHISHSYS";
+      assignedSlackId = "U0C9380GASU";
       assignedName = "Nithish gajjela";
     } else if (scenario === "be_redis_oom") {
       run_id = `run_be_redis_act_${timestamp}`;
@@ -172,7 +172,7 @@ export async function POST(req: NextRequest) {
         { item: "Safe catalogue remediation: restart cache service with flush policy" },
       ];
       permitted_actions = ["restart_demo_service", "disable_demo_feature_flag"];
-      assignedSlackId = "U03NITHISHSYS";
+      assignedSlackId = "U0C9380GASU";
       assignedName = "Nithish gajjela";
     } else if (scenario === "be_auth_desync" || scenario === "sys_ask" || scenario === "desync") {
       run_id = `run_sys_desync_ask_${timestamp}`;
@@ -183,7 +183,7 @@ export async function POST(req: NextRequest) {
         { item: "Ambiguous root cause between Redis network partition and stale JWT revocation cache" },
       ];
       permitted_actions = ["disable_demo_feature_flag", "restart_demo_service"];
-      assignedSlackId = "U03NITHISHSYS";
+      assignedSlackId = "U0C9380GASU";
       assignedName = "Nithish gajjela";
     } else if (scenario === "be_kafka_lag") {
       run_id = `run_be_kafka_ask_${timestamp}`;
@@ -194,7 +194,7 @@ export async function POST(req: NextRequest) {
         { item: "Restarting consumer group may cause duplicate message delivery; requires human sign-off" },
       ];
       permitted_actions = ["restart_demo_service", "disable_demo_feature_flag"];
-      assignedSlackId = "U03NITHISHSYS";
+      assignedSlackId = "U0C9380GASU";
       assignedName = "Nithish gajjela";
     } else if (scenario === "be_504_cascade") {
       run_id = `run_be_504_ask_${timestamp}`;
@@ -205,12 +205,12 @@ export async function POST(req: NextRequest) {
         { item: "Proposed remediation to disable partner routing flag requires engineer approval" },
       ];
       permitted_actions = ["disable_demo_feature_flag", "restart_demo_service"];
-      assignedSlackId = "U03NITHISHSYS";
+      assignedSlackId = "U0C9380GASU";
       assignedName = "Nithish gajjela";
     }
 
     // ==========================================
-    // 👑 ADMIN / PROJECT LEAD INCIDENTS -> @Rohith D (U01ROHITHADMIN)
+    // 👑 ADMIN / PROJECT LEAD INCIDENTS -> @Rohith D (U0C846MT30D)
     // ==========================================
     else if (scenario === "admin_canary_fail" || scenario === "canary") {
       run_id = `run_admin_canary_act_${timestamp}`;
@@ -221,7 +221,7 @@ export async function POST(req: NextRequest) {
         { item: "Autonomous catalogue action: roll back canary release to stable v2.4.0" },
       ];
       permitted_actions = ["rollback_latest_deploy", "disable_demo_feature_flag"];
-      assignedSlackId = "U01ROHITHADMIN";
+      assignedSlackId = "U0C846MT30D";
       assignedName = "Rohith D";
     } else if (scenario === "admin_circuit_breaker") {
       run_id = `run_admin_circuit_act_${timestamp}`;
@@ -232,7 +232,7 @@ export async function POST(req: NextRequest) {
         { item: "Autonomous action: disable demo payment feature flag and route to backup provider" },
       ];
       permitted_actions = ["disable_demo_feature_flag", "restart_demo_service"];
-      assignedSlackId = "U01ROHITHADMIN";
+      assignedSlackId = "U0C846MT30D";
       assignedName = "Rohith D";
     } else if (scenario === "admin_heap_oom" || scenario === "ask" || scenario === "heap_oom") {
       run_id = `run_admin_heap_ask_${timestamp}`;
@@ -243,7 +243,7 @@ export async function POST(req: NextRequest) {
         { item: "Multi-service blast radius: remediation restart affects 50,000 active sessions (Admin sign-off required)" },
       ];
       permitted_actions = ["restart_demo_service", "disable_demo_feature_flag"];
-      assignedSlackId = "U01ROHITHADMIN";
+      assignedSlackId = "U0C846MT30D";
       assignedName = "Rohith D";
     } else if (scenario === "admin_ddos_spike") {
       run_id = `run_admin_ddos_ask_${timestamp}`;
@@ -254,7 +254,7 @@ export async function POST(req: NextRequest) {
         { item: "Enabling global emergency DDoS mitigation filter requires Admin authorization" },
       ];
       permitted_actions = ["disable_demo_feature_flag", "restart_demo_service"];
-      assignedSlackId = "U01ROHITHADMIN";
+      assignedSlackId = "U0C846MT30D";
       assignedName = "Rohith D";
     } else if (scenario === "notify") {
       run_id = `run_notify_${timestamp}`;
@@ -266,7 +266,7 @@ export async function POST(req: NextRequest) {
         { item: "Conflicting health signals reported across cluster nodes" },
       ];
       permitted_actions = ["restart_demo_service"];
-      assignedSlackId = "U01ROHITHADMIN";
+      assignedSlackId = "U0C846MT30D";
       assignedName = "Rohith D";
     }
 

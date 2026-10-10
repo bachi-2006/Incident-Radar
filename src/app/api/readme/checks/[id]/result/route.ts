@@ -61,7 +61,7 @@ export async function POST(
       change_requests: changeRequests,
       notify: [
         {
-          slack_user_id: "U01ROHITHADMIN",
+          slack_user_id: "U0C846MT30D",
           name: "Rohith D",
           role: "admin",
         },
