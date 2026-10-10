@@ -10,7 +10,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --import tsx --test src/lib/*.spec.ts assignment-engine/*.spec.ts readme-checker/*.spec.ts"
+    "test": "node --import tsx --test src/lib/*.spec.ts assignment-engine/*.spec.ts readme-checker/*.spec.ts similarity-engine/*.spec.ts sdk/src/*.spec.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.4",
