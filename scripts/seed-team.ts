@@ -8,7 +8,7 @@ export const DEMO_MEMBERS = [
     role: "Admin / Project Lead",
     slack_user_id: "U0C846MT30D",
     slack_handle: "@Rohith D",
-    expertise: { system_architecture: 5, backend: 4, devops: 5, security: 5, database: 4 },
+    expertise: { admin: 5, system_architecture: 5, backend: 4, devops: 5, security: 5, database: 4 },
   },
   {
     id: "22222222-2222-2222-2222-222222222222",

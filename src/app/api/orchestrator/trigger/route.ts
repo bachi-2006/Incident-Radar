@@ -315,15 +315,15 @@ export async function POST(req: NextRequest) {
 
     const topCandidate = candidates[0];
 
-    // Priority: Explicit client param > Top candidate from assignment engine
-    if (!body.assigned_user_slack_id && topCandidate) {
-      assignedSlackId = topCandidate.slack_user_id;
-      assignedName = topCandidate.display_name;
-    } else if (body.assigned_user_slack_id) {
+    // Ensure assignedSlackId, assignedName, and assignedRole are strictly synchronized to the designated persona
+    if (body.assigned_user_slack_id) {
       assignedSlackId = body.assigned_user_slack_id;
-      if (body.assigned_user_name) assignedName = body.assigned_user_name;
     }
-    const assignedRole = topCandidate?.role || "Responder";
+
+    const assignedMember = DEMO_MEMBERS.find((m) => m.slack_user_id === assignedSlackId) || DEMO_MEMBERS[0];
+    assignedSlackId = assignedMember.slack_user_id;
+    assignedName = assignedMember.display_name;
+    const assignedRole = assignedMember.role;
     const assignmentId = crypto.randomUUID();
     const { ackDueAt, dueAt } = calculateSlaDeadlines("high");
     const deadlineIso = ackDueAt.toISOString();
@@ -337,7 +337,7 @@ export async function POST(req: NextRequest) {
           kind: "incident",
           incident_id,
           category: calculatedCategory,
-          assignee_id: topCandidate.id,
+          assignee_id: assignedMember.id,
           confidence: topCandidate.confidence,
           breakdown: topCandidate.breakdown,
           candidates: candidates.slice(0, 3),

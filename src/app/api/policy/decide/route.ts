@@ -68,29 +68,31 @@ export async function POST(req: NextRequest) {
 
     const baseUrl = process.env.APP_BASE_URL || "https://incident-radar.onrender.com";
 
-    // Person-specific routing based on scenario and cause
-    let assignedSlackId = body.assigned_user_slack_id || "U0C846MT30D";
-    let assignedRole = body.assigned_user_role || "Admin / Project Lead";
-    let assignedHandle = body.assigned_user_name ? `@${body.assigned_user_name}` : "@Rohith D";
+    // Canonical Persona Dictionary
+    const ROSTER: Record<string, { name: string; handle: string; role: string }> = {
+      "U0C846MT30D": { name: "Rohith D", handle: "@Rohith D", role: "Admin / Project Lead" },
+      "U0C7TNSNS5D": { name: "Dachepally", handle: "@Dachepally", role: "Frontend Developer" },
+      "U0C9380GASU": { name: "Nithish gajjela", handle: "@Nithish gajjela", role: "Backend Developer / System Designer" },
+    };
 
-    if (!body.assigned_user_slack_id) {
-      const causeLower = candidate_cause.toLowerCase();
-      const runLower = run_id.toLowerCase();
+    let assignedSlackId = body.assigned_user_slack_id;
+    if (!assignedSlackId || !ROSTER[assignedSlackId]) {
+      const causeLower = (candidate_cause || "").toLowerCase();
+      const runLower = (run_id || "").toLowerCase();
 
       if (runLower.includes("fe_") || runLower.includes("frontend") || causeLower.includes("frontend") || causeLower.includes("dead click") || causeLower.includes("hydration") || causeLower.includes("chunk")) {
         assignedSlackId = "U0C7TNSNS5D";
-        assignedRole = "Frontend Developer";
-        assignedHandle = "@Dachepally";
       } else if (runLower.includes("be_") || runLower.includes("backend") || runLower.includes("sys_") || causeLower.includes("database") || causeLower.includes("npe") || causeLower.includes("pool") || causeLower.includes("redis") || causeLower.includes("kafka") || causeLower.includes("desync")) {
         assignedSlackId = "U0C9380GASU";
-        assignedRole = "Backend Developer / System Designer";
-        assignedHandle = "@Nithish gajjela";
       } else {
         assignedSlackId = "U0C846MT30D";
-        assignedRole = "Admin / Project Lead";
-        assignedHandle = "@Rohith D";
       }
     }
+
+    const memberInfo = ROSTER[assignedSlackId] || ROSTER["U0C846MT30D"];
+    const assignedName = memberInfo.name;
+    const assignedHandle = memberInfo.handle;
+    const assignedRole = memberInfo.role;
 
     const incident_id = body.incident_id || run_id;
     const category = (body.category || "frontend").trim().toLowerCase().replace(/\s+/g, "_");
@@ -128,26 +130,28 @@ export async function POST(req: NextRequest) {
 
     if (decision === "ACT") {
       slack_dm_text = `🚨 *Incident assigned to you*\n\n` +
+        `*Assignee*: <@${assignedSlackId}> (${assignedHandle} — ${assignedRole})\n` +
         `*Area*: ${category} | *Confidence*: ${Math.round(categoryConfidence * 100)}%\n` +
         `*Incident*: ${candidate_cause}\n` +
         `*Service*: \`${targetService}\` | *Severity*: High\n\n` +
         `*Why you were selected*:\n` +
-        `• Expertise fit: 5/5 in ${category}\n` +
-        `• Owns the ${category} category\n` +
-        `• Correlated telemetry matches component ownership\n\n` +
+        `• ${assignedName} holds highest domain expertise (${assignedRole})\n` +
+        `• Component ownership in ${category} architecture\n` +
+        `• Correlated telemetry matches service ownership\n\n` +
         `*Recommended action*:\nAutonomous remediation via action \`${recommended_action}\`.\n\n` +
         `*Deadline*:\n${formattedDeadline} IST\n\n` +
         `*Open incident*: ${baseUrl}/incidents/${incident_id}\n` +
         `*View run*: ${baseUrl}/runs/${run_id}`;
     } else if (decision === "ASK") {
       slack_dm_text = `🚨 *Incident assigned to you*\n\n` +
+        `*Assignee*: <@${assignedSlackId}> (${assignedHandle} — ${assignedRole})\n` +
         `*Area*: ${category} | *Confidence*: ${Math.round(categoryConfidence * 100)}%\n` +
         `*Incident*: ${candidate_cause}\n` +
         `*Service*: \`${targetService}\` | *Severity*: High\n\n` +
         `*Why you were selected*:\n` +
-        `• Expertise fit: 5/5 in ${category}\n` +
-        `• Owns the ${category} category\n` +
-        `• Telemetry ambiguity requires domain expert sign-off\n\n` +
+        `• ${assignedName} holds domain authority (${assignedRole})\n` +
+        `• Specialist review required for ${category} component\n` +
+        `• Telemetry ambiguity requires expert sign-off\n\n` +
         `*Recommended action*:\n\`${recommended_action}\` (Fallback: \`${fallback_action}\`)\n\n` +
         `*Deadline*:\n${formattedDeadline} IST\n\n` +
         `*Open incident*: ${baseUrl}/incidents/${incident_id}\n` +
@@ -156,9 +160,9 @@ export async function POST(req: NextRequest) {
       slack_dm_text = `🛑 *Incident Alert Escalated*\n\n` +
         `*Incident*: ${candidate_cause}\n` +
         `*Service*: \`${targetService}\`\n\n` +
-        `*Primary Assignee*: <@${assignedSlackId}> (${assignedHandle} - ${assignedRole})\n` +
-        `*Escalation Roster*: <@U0C846MT30D> (@Rohith D - Admin), <@U0C7TNSNS5D> (@Dachepally - Frontend), <@U0C9380GASU> (@Nithish gajjela - System Designer)`;
-      slack_channel_summary = `🛑 *Incident ${incident_id} Escalated* to on-call roster. Primary: ${assignedHandle}. Investigation required.`;
+        `*Primary Assignee*: <@${assignedSlackId}> (${assignedHandle} — ${assignedRole})\n` +
+        `*Escalation Roster*: <@U0C846MT30D> (@Rohith D - Admin / Project Lead), <@U0C7TNSNS5D> (@Dachepally - Frontend Developer), <@U0C9380GASU> (@Nithish gajjela - Backend Developer / System Designer)`;
+      slack_channel_summary = `🛑 *Incident ${incident_id} Escalated* to on-call roster. Primary: ${assignedHandle} (${assignedRole}). Investigation required.`;
     }
 
     // Default slack_text to slack_dm_text for single-step compatibility
