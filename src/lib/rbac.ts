@@ -13,9 +13,9 @@ const ROLE_RANK: Record<string, number> = {
 
 // Canonical Roster Role Mapping for fast, reliable resolution
 const CANONICAL_ROSTER_ROLES: Record<string, { name: string; role: ProjectRole }> = {
-  "U0C846MT30D": { name: "Rohith D", role: "admin" },
-  "U0C7TNSNS5D": { name: "Dachepally", role: "maintainer" },
-  "U0C9380GASU": { name: "Nithish gajjela", role: "maintainer" },
+  "U0C9380GASU": { name: "Rohith D", role: "admin" },
+  "U0C846MT30D": { name: "Dachepally", role: "maintainer" },
+  "U0C7TNSNS5D": { name: "Nithish gajjela", role: "maintainer" },
 };
 
 export function isRoleAtLeast(userRole: string, requiredRole: string): boolean {

@@ -70,9 +70,9 @@ export async function POST(req: NextRequest) {
 
     // Canonical Persona Dictionary
     const ROSTER: Record<string, { name: string; handle: string; role: string }> = {
-      "U0C846MT30D": { name: "Rohith D", handle: "@Rohith D", role: "Admin / Project Lead" },
-      "U0C7TNSNS5D": { name: "Dachepally", handle: "@Dachepally", role: "Frontend Developer" },
-      "U0C9380GASU": { name: "Nithish gajjela", handle: "@Nithish gajjela", role: "Backend Developer / System Designer" },
+      "U0C9380GASU": { name: "Rohith D", handle: "@Rohith D", role: "Admin / Project Lead" },
+      "U0C846MT30D": { name: "Dachepally", handle: "@Dachepally", role: "Frontend Developer" },
+      "U0C7TNSNS5D": { name: "Nithish gajjela", handle: "@Nithish gajjela", role: "Backend Developer / System Designer" },
     };
 
     let assignedSlackId = body.assigned_user_slack_id;
@@ -81,15 +81,15 @@ export async function POST(req: NextRequest) {
       const runLower = (run_id || "").toLowerCase();
 
       if (runLower.includes("fe_") || runLower.includes("frontend") || causeLower.includes("frontend") || causeLower.includes("dead click") || causeLower.includes("hydration") || causeLower.includes("chunk")) {
-        assignedSlackId = "U0C7TNSNS5D";
-      } else if (runLower.includes("be_") || runLower.includes("backend") || runLower.includes("sys_") || causeLower.includes("database") || causeLower.includes("npe") || causeLower.includes("pool") || causeLower.includes("redis") || causeLower.includes("kafka") || causeLower.includes("desync")) {
-        assignedSlackId = "U0C9380GASU";
-      } else {
         assignedSlackId = "U0C846MT30D";
+      } else if (runLower.includes("be_") || runLower.includes("backend") || runLower.includes("sys_") || causeLower.includes("database") || causeLower.includes("npe") || causeLower.includes("pool") || causeLower.includes("redis") || causeLower.includes("kafka") || causeLower.includes("desync")) {
+        assignedSlackId = "U0C7TNSNS5D";
+      } else {
+        assignedSlackId = "U0C9380GASU";
       }
     }
 
-    const memberInfo = ROSTER[assignedSlackId] || ROSTER["U0C846MT30D"];
+    const memberInfo = ROSTER[assignedSlackId] || ROSTER["U0C9380GASU"];
     const assignedName = memberInfo.name;
     const assignedHandle = memberInfo.handle;
     const assignedRole = memberInfo.role;
@@ -130,6 +130,7 @@ export async function POST(req: NextRequest) {
     let slack_channel_summary = `🚨 *Incident ${incident_id} assigned to ${assignedHandle.replace(/^@/, "")} (${category})*, confidence ${Math.round(categoryConfidence * 100)}%. A direct message was sent to the assignee.`;
 
     if (decision === "ACT") {
+      slack_channel_summary = `🚨 *Incident ${incident_id} assigned to ${assignedHandle.replace(/^@/, "")} (${category})*. Autonomous remediation initiated via \`${recommended_action}\`. Direct message dispatched to assignee.`;
       slack_dm_text = `🚨 *Incident assigned to you*\n\n` +
         `*Assignee*: <@${assignedSlackId}> (${assignedHandle} — ${assignedRole})\n` +
         `*Area*: ${category} | *Confidence*: ${Math.round(categoryConfidence * 100)}%\n` +
@@ -144,6 +145,7 @@ export async function POST(req: NextRequest) {
         `*Open incident*: ${baseUrl}/incidents/${incident_id}\n` +
         `*View run*: ${baseUrl}/runs/${run_id}`;
     } else if (decision === "ASK") {
+      slack_channel_summary = `🚨 *Incident ${incident_id} assigned to ${assignedHandle.replace(/^@/, "")} (${category})*. Human-in-the-loop review requested from assignee for action \`${recommended_action}\`. Direct message dispatched with approval link.`;
       slack_dm_text = `🚨 *Incident assigned to you*\n\n` +
         `*Assignee*: <@${assignedSlackId}> (${assignedHandle} — ${assignedRole})\n` +
         `*Area*: ${category} | *Confidence*: ${Math.round(categoryConfidence * 100)}%\n` +
@@ -158,12 +160,12 @@ export async function POST(req: NextRequest) {
         `*Open incident*: ${baseUrl}/incidents/${incident_id}\n` +
         `*Acknowledge / Approve*: ${approveUrl}`;
     } else {
+      slack_channel_summary = `🛑 *Incident ${incident_id} Escalated* to on-call roster. Primary: ${assignedHandle} (${assignedRole}). Manual investigation required.`;
       slack_dm_text = `🛑 *Incident Alert Escalated*\n\n` +
         `*Incident*: ${candidate_cause}\n` +
         `*Service*: \`${targetService}\`\n\n` +
         `*Primary Assignee*: <@${assignedSlackId}> (${assignedHandle} — ${assignedRole})\n` +
-        `*Escalation Roster*: <@U0C846MT30D> (@Rohith D - Admin / Project Lead), <@U0C7TNSNS5D> (@Dachepally - Frontend Developer), <@U0C9380GASU> (@Nithish gajjela - Backend Developer / System Designer)`;
-      slack_channel_summary = `🛑 *Incident ${incident_id} Escalated* to on-call roster. Primary: ${assignedHandle} (${assignedRole}). Investigation required.`;
+        `*Escalation Roster*: <@U0C9380GASU> (@Rohith D - Admin / Project Lead), <@U0C846MT30D> (@Dachepally - Frontend Developer), <@U0C7TNSNS5D> (@Nithish gajjela - Backend Developer / System Designer)`;
     }
 
     // Default slack_text to slack_dm_text for single-step compatibility

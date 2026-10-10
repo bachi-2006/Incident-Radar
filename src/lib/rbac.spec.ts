@@ -20,7 +20,7 @@ test("checkProjectPermission fails closed when user identification is missing", 
 test("checkProjectPermission authorizes canonical roster members with appropriate roles", async () => {
   // Rohith D is admin
   const adminRes = await checkProjectPermission({
-    slackUserId: "U0C846MT30D",
+    slackUserId: "U0C9380GASU",
     requiredRole: "admin",
   });
   assert.equal(adminRes.allowed, true);
@@ -28,7 +28,7 @@ test("checkProjectPermission authorizes canonical roster members with appropriat
 
   // Dachepally is maintainer, satisfying responder
   const maintainerRes = await checkProjectPermission({
-    slackUserId: "U0C7TNSNS5D",
+    slackUserId: "U0C846MT30D",
     requiredRole: "responder",
   });
   assert.equal(maintainerRes.allowed, true);
@@ -44,7 +44,7 @@ test("checkProjectPermission fails closed for unknown user or insufficient role"
 
   // Dachepally (maintainer) is not an admin
   const insufficientRes = await checkProjectPermission({
-    slackUserId: "U0C7TNSNS5D",
+    slackUserId: "U0C846MT30D",
     requiredRole: "admin",
   });
   assert.equal(insufficientRes.allowed, false);
