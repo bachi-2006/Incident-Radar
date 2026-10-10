@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { setActiveRun } from "@/lib/run-state";
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,7 +11,11 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { run_id, step_key, actor = "workato", status = "completed", error } = body;
+    const { run_id, incident_id, step_key, actor = "workato", status = "completed", error } = body;
+
+    if (run_id) {
+      setActiveRun(run_id, incident_id);
+    }
 
     console.log(`[Agent Event] Run: ${run_id} | Step: ${step_key} | Status: ${status}`, error ? `Error: ${error}` : "");
 

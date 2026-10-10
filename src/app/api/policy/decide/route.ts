@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getActiveRun } from "@/lib/run-state";
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,16 +11,28 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const {
-      run_id = `run_${Date.now()}`,
-      assessment_status = "supported",
-      candidate_cause = "Recent bad canary deployment causing payment gateway latency spikes",
-      recommended_action = "rollback_latest_deploy",
-      fallback_action = "disable_demo_feature_flag",
-      evidence_for = [],
-      evidence_against = [],
-      reasoning_summary = "High correlation between deployment event and elevated error metrics.",
-    } = body;
+    const active = getActiveRun();
+    const run_id = body.run_id || active?.runId || `run_${Date.now()}`;
+
+    // Extract assessment fields from body or default
+    let assessment_status = body.assessment_status || "supported";
+    let candidate_cause = body.candidate_cause || "Recent bad canary deployment causing payment gateway latency spikes";
+    let recommended_action = body.recommended_action || "rollback_latest_deploy";
+    let fallback_action = body.fallback_action || "disable_demo_feature_flag";
+
+    // Scenario awareness via run_id tagging or active run state
+    const isAsk = active?.scenario === "ask" || run_id.includes("ask") || run_id.includes("memory") || run_id.includes("approval");
+    const isNotify = active?.scenario === "notify" || run_id.includes("notify") || run_id.includes("contradict") || run_id.includes("escalat") || run_id.includes("noise");
+
+    if (isAsk) {
+      assessment_status = "uncertain";
+      candidate_cause = "Gradual cluster memory exhaustion over 48h; unconfirmed leak origin across microservices.";
+      recommended_action = "restart_demo_service";
+      fallback_action = "disable_demo_feature_flag";
+    } else if (isNotify) {
+      assessment_status = "contradictory";
+      candidate_cause = "Conflicting telemetry: CPU saturation on primary node with nominal query latency and zero external traffic.";
+    }
 
     const allowedCatalogue = [
       "rollback_latest_deploy",
@@ -48,7 +61,7 @@ export async function POST(req: NextRequest) {
       decision = "NOTIFY";
       rule_id = "R7_ACTION_CONTEXT_MISMATCH";
       reason = "Contradictory evidence or unsupported action. Escalating to on-call engineer.";
-      slack_text = `🛑 *Incident Radar*: Investigation escalated without automated action. Root cause ambiguous.`;
+      slack_text = `🛑 *Incident Radar*: Investigation escalated without automated action. Root cause ambiguous (${candidate_cause}). Paging on-call responder.`;
     }
 
     return NextResponse.json({
