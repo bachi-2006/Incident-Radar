@@ -77,21 +77,13 @@ export async function POST(req: NextRequest) {
       const causeLower = candidate_cause.toLowerCase();
       const runLower = run_id.toLowerCase();
 
-      if (runLower.includes("fe_") || runLower.includes("frontend") || causeLower.includes("frontend") || causeLower.includes("dead click") || causeLower.includes("hydration")) {
+      if (runLower.includes("fe_") || runLower.includes("frontend") || causeLower.includes("frontend") || causeLower.includes("dead click") || causeLower.includes("hydration") || causeLower.includes("chunk")) {
         assignedSlackId = "U02DACHEPALLY";
         assignedRole = "Frontend Developer";
         assignedHandle = "@Dachepally";
-      } else if (runLower.includes("be_") || runLower.includes("backend") || causeLower.includes("database") || causeLower.includes("npe") || causeLower.includes("pool")) {
-        assignedSlackId = "U04RAHULBACK";
-        assignedRole = "Backend Specialist";
-        assignedHandle = "@Rahul Verma";
-      } else if (runLower.includes("devops") || causeLower.includes("canary") || causeLower.includes("kubernetes") || causeLower.includes("crashloop")) {
-        assignedSlackId = "U05SAMDEVOPS";
-        assignedRole = "DevOps Specialist";
-        assignedHandle = "@Sam Taylor";
-      } else if (runLower.includes("sys_") || isNotify || causeLower.includes("contradict") || causeLower.includes("desync")) {
+      } else if (runLower.includes("be_") || runLower.includes("backend") || runLower.includes("sys_") || causeLower.includes("database") || causeLower.includes("npe") || causeLower.includes("pool") || causeLower.includes("redis") || causeLower.includes("kafka") || causeLower.includes("desync")) {
         assignedSlackId = "U03NITHISHSYS";
-        assignedRole = "System Designer";
+        assignedRole = "Backend Developer / System Designer";
         assignedHandle = "@Nithish gajjela";
       } else {
         assignedSlackId = "U01ROHITHADMIN";

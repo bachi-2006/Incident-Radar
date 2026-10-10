@@ -106,128 +106,318 @@
           </div>
 
           <div class="mt-6 space-y-4">
-            <!-- Category 1: Autonomous Remediation (ACT) -->
-            <div>
-              <div class="text-[11px] font-bold uppercase tracking-wider text-emerald-400 flex items-center justify-between pb-1.5 border-b border-emerald-500/20">
-                <span class="flex items-center gap-1.5">⚡ <span>Category 1: Autonomous Remediation (ACT)</span></span>
-                <span class="text-[10px] text-slate-400 font-mono">Auto-Fix</span>
-              </div>
-              <div class="mt-2 space-y-2">
-                <!-- Frontend ACT: @Dachepally -->
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Inject Production Failures (15 Scenarios)</span>
+              <span class="text-[10px] text-emerald-400 font-mono">⚡ Auto-Fires Workato</span>
+            </div>
+
+            <!-- Scrollable container for all 15 categorized incidents -->
+            <div class="max-h-[380px] overflow-y-auto pr-1 space-y-4">
+
+              <!-- ========================================== -->
+              <!-- ⚡ CATEGORY 1: AUTONOMOUS REMEDIATION (ACT) -->
+              <!-- ========================================== -->
+              <div class="space-y-2">
+                <div class="sticky top-0 bg-slate-900/95 backdrop-blur z-10 py-1 flex items-center justify-between border-b border-emerald-500/30 text-[11px] font-bold uppercase text-emerald-400 tracking-wider">
+                  <span class="flex items-center gap-1.5">⚡ <span>Category 1: Autonomous Remediation (ACT)</span></span>
+                  <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300">AUTO-ROLLBACK / FIX</span>
+                </div>
+
+                <!-- 1. Frontend: Dead Click -> @Dachepally -->
                 <button
                   id="pay-button"
-                  onclick="triggerFrontendDeadClick()"
-                  class="w-full py-2.5 px-3 rounded-xl border border-indigo-500/40 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-200 text-xs font-medium flex items-center justify-between transition group"
+                  onclick="triggerFeDeadClick()"
+                  class="w-full py-2 px-3 rounded-xl border border-indigo-500/40 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-200 text-xs font-medium flex items-center justify-between transition group text-left"
                 >
-                  <div class="flex items-center gap-2 text-left">
+                  <div class="flex items-center gap-2">
                     <span class="text-indigo-400">🎨</span>
                     <div>
-                      <div class="font-semibold text-slate-200">Frontend Dead Click</div>
+                      <div class="font-semibold text-slate-200 text-[11px]">1. Checkout CTA Dead Click</div>
                       <div class="text-[10px] text-indigo-300">Target: <strong class="text-white">@Dachepally</strong> (Frontend)</div>
                     </div>
                   </div>
                   <div class="text-right font-mono text-[10px]">
-                    <span class="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300">ACT</span>
+                    <span class="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-bold">ACT</span>
                     <div id="click-counter" class="text-slate-400 text-[9px] mt-0.5">Clicks: 0</div>
                   </div>
                 </button>
 
-                <!-- Backend ACT: @Rahul Verma -->
+                <!-- 2. Frontend: SSR Hydration Crash -> @Dachepally -->
                 <button
-                  onclick="triggerBackendDbPool()"
-                  class="w-full py-2.5 px-3 rounded-xl border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-200 text-xs font-medium flex items-center justify-between transition group"
+                  onclick="triggerFeHydration()"
+                  class="w-full py-2 px-3 rounded-xl border border-indigo-500/40 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-200 text-xs font-medium flex items-center justify-between transition group text-left"
                 >
-                  <div class="flex items-center gap-2 text-left">
-                    <span class="text-rose-400">⚙️</span>
+                  <div class="flex items-center gap-2">
+                    <span class="text-indigo-400">🔄</span>
                     <div>
-                      <div class="font-semibold text-slate-200">DB Connection Pool NPE</div>
-                      <div class="text-[10px] text-rose-300">Target: <strong class="text-white">@Rahul Verma</strong> (Backend)</div>
+                      <div class="font-semibold text-slate-200 text-[11px]">2. React 19 SSR Hydration Crash</div>
+                      <div class="text-[10px] text-indigo-300">Target: <strong class="text-white">@Dachepally</strong> (Frontend)</div>
                     </div>
                   </div>
                   <div class="text-right font-mono text-[10px]">
-                    <span class="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300">ACT</span>
+                    <span class="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-bold">ACT</span>
+                    <div class="text-slate-400 text-[9px] mt-0.5">~620ms</div>
+                  </div>
+                </button>
+
+                <!-- 3. Frontend: Webpack Chunk 404 -> @Dachepally -->
+                <button
+                  onclick="triggerFeChunk404()"
+                  class="w-full py-2 px-3 rounded-xl border border-indigo-500/40 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-200 text-xs font-medium flex items-center justify-between transition group text-left"
+                >
+                  <div class="flex items-center gap-2">
+                    <span class="text-indigo-400">📦</span>
+                    <div>
+                      <div class="font-semibold text-slate-200 text-[11px]">3. Chunk 404 Load Failure</div>
+                      <div class="text-[10px] text-indigo-300">Target: <strong class="text-white">@Dachepally</strong> (Frontend)</div>
+                    </div>
+                  </div>
+                  <div class="text-right font-mono text-[10px]">
+                    <span class="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-bold">ACT</span>
+                    <div class="text-slate-400 text-[9px] mt-0.5">~110ms</div>
+                  </div>
+                </button>
+
+                <!-- 4. Frontend: LocalStorage Quota Exceeded -> @Dachepally -->
+                <button
+                  onclick="triggerFeQuota()"
+                  class="w-full py-2 px-3 rounded-xl border border-indigo-500/40 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-200 text-xs font-medium flex items-center justify-between transition group text-left"
+                >
+                  <div class="flex items-center gap-2">
+                    <span class="text-indigo-400">💾</span>
+                    <div>
+                      <div class="font-semibold text-slate-200 text-[11px]">4. LocalStorage Quota Exceeded</div>
+                      <div class="text-[10px] text-indigo-300">Target: <strong class="text-white">@Dachepally</strong> (Frontend)</div>
+                    </div>
+                  </div>
+                  <div class="text-right font-mono text-[10px]">
+                    <span class="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-bold">ACT</span>
+                    <div class="text-slate-400 text-[9px] mt-0.5">~40ms</div>
+                  </div>
+                </button>
+
+                <!-- 5. Backend: DB Connection Pool 98% -> @Nithish gajjela -->
+                <button
+                  onclick="triggerBeDbPool()"
+                  class="w-full py-2 px-3 rounded-xl border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-200 text-xs font-medium flex items-center justify-between transition group text-left"
+                >
+                  <div class="flex items-center gap-2">
+                    <span class="text-rose-400">⚙️</span>
+                    <div>
+                      <div class="font-semibold text-slate-200 text-[11px]">5. PostgreSQL Pool Saturated 98%</div>
+                      <div class="text-[10px] text-rose-300">Target: <strong class="text-white">@Nithish</strong> (Backend/Sys)</div>
+                    </div>
+                  </div>
+                  <div class="text-right font-mono text-[10px]">
+                    <span class="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold">ACT</span>
                     <div class="text-slate-400 text-[9px] mt-0.5">~1450ms</div>
                   </div>
                 </button>
 
-                <!-- DevOps ACT: @Sam Taylor -->
+                <!-- 6. Backend: processPayment NPE -> @Nithish gajjela -->
                 <button
-                  onclick="triggerDevopsCanary()"
-                  class="w-full py-2.5 px-3 rounded-xl border border-teal-500/40 bg-teal-500/10 hover:bg-teal-500/20 text-teal-200 text-xs font-medium flex items-center justify-between transition group"
+                  onclick="triggerBeNpe()"
+                  class="w-full py-2 px-3 rounded-xl border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-200 text-xs font-medium flex items-center justify-between transition group text-left"
                 >
-                  <div class="flex items-center gap-2 text-left">
-                    <span class="text-teal-400">🐳</span>
+                  <div class="flex items-center gap-2">
+                    <span class="text-rose-400">💥</span>
                     <div>
-                      <div class="font-semibold text-slate-200">K8s Pod CrashLoop OOM</div>
-                      <div class="text-[10px] text-teal-300">Target: <strong class="text-white">@Sam Taylor</strong> (DevOps)</div>
+                      <div class="font-semibold text-slate-200 text-[11px]">6. CheckoutController NPE</div>
+                      <div class="text-[10px] text-rose-300">Target: <strong class="text-white">@Nithish</strong> (Backend/Sys)</div>
                     </div>
                   </div>
                   <div class="text-right font-mono text-[10px]">
-                    <span class="px-1.5 py-0.5 rounded bg-teal-500/20 text-teal-300">ACT</span>
-                    <div class="text-slate-400 text-[9px] mt-0.5">~850ms</div>
+                    <span class="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold">ACT</span>
+                    <div class="text-slate-400 text-[9px] mt-0.5">~1820ms</div>
+                  </div>
+                </button>
+
+                <!-- 7. Backend: Unindexed Slow Query 4200ms -> @Nithish gajjela -->
+                <button
+                  onclick="triggerBeSlowQuery()"
+                  class="w-full py-2 px-3 rounded-xl border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-200 text-xs font-medium flex items-center justify-between transition group text-left"
+                >
+                  <div class="flex items-center gap-2">
+                    <span class="text-rose-400">🐢</span>
+                    <div>
+                      <div class="font-semibold text-slate-200 text-[11px]">7. Unindexed Orders Slow Query</div>
+                      <div class="text-[10px] text-rose-300">Target: <strong class="text-white">@Nithish</strong> (Backend/Sys)</div>
+                    </div>
+                  </div>
+                  <div class="text-right font-mono text-[10px]">
+                    <span class="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold">ACT</span>
+                    <div class="text-slate-400 text-[9px] mt-0.5">~4200ms</div>
+                  </div>
+                </button>
+
+                <!-- 8. Backend: Redis Cache MaxMemory OOM -> @Nithish gajjela -->
+                <button
+                  onclick="triggerBeRedisOOM()"
+                  class="w-full py-2 px-3 rounded-xl border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-200 text-xs font-medium flex items-center justify-between transition group text-left"
+                >
+                  <div class="flex items-center gap-2">
+                    <span class="text-rose-400">⚡</span>
+                    <div>
+                      <div class="font-semibold text-slate-200 text-[11px]">8. Redis Session MaxMemory OOM</div>
+                      <div class="text-[10px] text-rose-300">Target: <strong class="text-white">@Nithish</strong> (Backend/Sys)</div>
+                    </div>
+                  </div>
+                  <div class="text-right font-mono text-[10px]">
+                    <span class="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold">ACT</span>
+                    <div class="text-slate-400 text-[9px] mt-0.5">~950ms</div>
+                  </div>
+                </button>
+
+                <!-- 9. Admin: Canary Error Rate SLA Breach -> @Rohith D -->
+                <button
+                  onclick="triggerAdminCanary()"
+                  class="w-full py-2 px-3 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-200 text-xs font-medium flex items-center justify-between transition group text-left"
+                >
+                  <div class="flex items-center gap-2">
+                    <span class="text-emerald-400">🚀</span>
+                    <div>
+                      <div class="font-semibold text-slate-200 text-[11px]">9. Canary SLA Breach (42.5% > 1%)</div>
+                      <div class="text-[10px] text-emerald-300">Target: <strong class="text-white">@Rohith D</strong> (Admin/Lead)</div>
+                    </div>
+                  </div>
+                  <div class="text-right font-mono text-[10px]">
+                    <span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">ACT</span>
+                    <div class="text-slate-400 text-[9px] mt-0.5">~1200ms</div>
+                  </div>
+                </button>
+
+                <!-- 10. Admin: Circuit Breaker OPEN -> @Rohith D -->
+                <button
+                  onclick="triggerAdminCircuit()"
+                  class="w-full py-2 px-3 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-200 text-xs font-medium flex items-center justify-between transition group text-left"
+                >
+                  <div class="flex items-center gap-2">
+                    <span class="text-emerald-400">🔌</span>
+                    <div>
+                      <div class="font-semibold text-slate-200 text-[11px]">10. Payment Circuit Breaker OPEN</div>
+                      <div class="text-[10px] text-emerald-300">Target: <strong class="text-white">@Rohith D</strong> (Admin/Lead)</div>
+                    </div>
+                  </div>
+                  <div class="text-right font-mono text-[10px]">
+                    <span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">ACT</span>
+                    <div class="text-slate-400 text-[9px] mt-0.5">~350ms</div>
                   </div>
                 </button>
               </div>
-            </div>
 
-            <!-- Category 2: Human Sign-Off (ASK) -->
-            <div>
-              <div class="text-[11px] font-bold uppercase tracking-wider text-amber-400 flex items-center justify-between pb-1.5 border-b border-amber-500/20">
-                <span class="flex items-center gap-1.5">🛡️ <span>Category 2: Human Sign-Off (ASK)</span></span>
-                <span class="text-[10px] text-slate-400 font-mono">Approval Req</span>
-              </div>
-              <div class="mt-2 space-y-2">
-                <!-- System Architecture ASK: @Nithish gajjela -->
+              <!-- ========================================== -->
+              <!-- 🛡️ CATEGORY 2: HUMAN SIGN-OFF (ASK)        -->
+              <!-- ========================================== -->
+              <div class="space-y-2 pt-2">
+                <div class="sticky top-0 bg-slate-900/95 backdrop-blur z-10 py-1 flex items-center justify-between border-b border-amber-500/30 text-[11px] font-bold uppercase text-amber-400 tracking-wider">
+                  <span class="flex items-center gap-1.5">🛡️ <span>Category 2: Human Sign-Off (ASK)</span></span>
+                  <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300">APPROVAL REQUIRED</span>
+                </div>
+
+                <!-- 11. Frontend: Calculation Rounding Drift -> @Dachepally -->
                 <button
-                  onclick="triggerSystemDesync()"
-                  class="w-full py-2.5 px-3 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-200 text-xs font-medium flex items-center justify-between transition group"
+                  onclick="triggerFeCalcDrift()"
+                  class="w-full py-2 px-3 rounded-xl border border-indigo-500/40 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-200 text-xs font-medium flex items-center justify-between transition group text-left"
                 >
-                  <div class="flex items-center gap-2 text-left">
-                    <span class="text-amber-400">📐</span>
+                  <div class="flex items-center gap-2">
+                    <span class="text-indigo-400">🧮</span>
                     <div>
-                      <div class="font-semibold text-slate-200">Auth Gateway Desync</div>
-                      <div class="text-[10px] text-amber-300">Target: <strong class="text-white">@Nithish</strong> (System Design)</div>
+                      <div class="font-semibold text-slate-200 text-[11px]">11. Multi-Currency Rounding Drift</div>
+                      <div class="text-[10px] text-indigo-300">Target: <strong class="text-white">@Dachepally</strong> (Frontend)</div>
                     </div>
                   </div>
                   <div class="text-right font-mono text-[10px]">
-                    <span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">ASK</span>
+                    <span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold">ASK</span>
+                    <div class="text-slate-400 text-[9px] mt-0.5">~1900ms</div>
+                  </div>
+                </button>
+
+                <!-- 12. Frontend: Stripe CSP Block -> @Dachepally -->
+                <button
+                  onclick="triggerFeCsp()"
+                  class="w-full py-2 px-3 rounded-xl border border-indigo-500/40 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-200 text-xs font-medium flex items-center justify-between transition group text-left"
+                >
+                  <div class="flex items-center gap-2">
+                    <span class="text-indigo-400">🔒</span>
+                    <div>
+                      <div class="font-semibold text-slate-200 text-[11px]">12. Stripe SDK CSP Header Block</div>
+                      <div class="text-[10px] text-indigo-300">Target: <strong class="text-white">@Dachepally</strong> (Frontend)</div>
+                    </div>
+                  </div>
+                  <div class="text-right font-mono text-[10px]">
+                    <span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold">ASK</span>
+                    <div class="text-slate-400 text-[9px] mt-0.5">~2200ms</div>
+                  </div>
+                </button>
+
+                <!-- 13. Backend: Auth Gateway Split-Brain -> @Nithish gajjela -->
+                <button
+                  onclick="triggerBeAuthDesync()"
+                  class="w-full py-2 px-3 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-200 text-xs font-medium flex items-center justify-between transition group text-left"
+                >
+                  <div class="flex items-center gap-2">
+                    <span class="text-amber-400">📐</span>
+                    <div>
+                      <div class="font-semibold text-slate-200 text-[11px]">13. Auth Gateway Split-Brain Desync</div>
+                      <div class="text-[10px] text-amber-300">Target: <strong class="text-white">@Nithish</strong> (Backend/Sys)</div>
+                    </div>
+                  </div>
+                  <div class="text-right font-mono text-[10px]">
+                    <span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold">ASK</span>
                     <div class="text-slate-400 text-[9px] mt-0.5">~2600ms</div>
                   </div>
                 </button>
 
-                <!-- Admin / Lead ASK: @Rohith D -->
+                <!-- 14. Backend: Kafka Event Stream Lag (45k) -> @Nithish gajjela -->
                 <button
-                  onclick="triggerClusterOOM()"
-                  class="w-full py-2.5 px-3 rounded-xl border border-purple-500/40 bg-purple-500/10 hover:bg-purple-500/20 text-purple-200 text-xs font-medium flex items-center justify-between transition group"
+                  onclick="triggerBeKafkaLag()"
+                  class="w-full py-2 px-3 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-200 text-xs font-medium flex items-center justify-between transition group text-left"
                 >
-                  <div class="flex items-center gap-2 text-left">
+                  <div class="flex items-center gap-2">
+                    <span class="text-amber-400">📬</span>
+                    <div>
+                      <div class="font-semibold text-slate-200 text-[11px]">14. Event Stream Consumer Lag 45k</div>
+                      <div class="text-[10px] text-amber-300">Target: <strong class="text-white">@Nithish</strong> (Backend/Sys)</div>
+                    </div>
+                  </div>
+                  <div class="text-right font-mono text-[10px]">
+                    <span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold">ASK</span>
+                    <div class="text-slate-400 text-[9px] mt-0.5">~3100ms</div>
+                  </div>
+                </button>
+
+                <!-- 15. Admin: 48h Cluster Heap Thrash P1 -> @Rohith D -->
+                <button
+                  onclick="triggerAdminHeapOOM()"
+                  class="w-full py-2 px-3 rounded-xl border border-purple-500/40 bg-purple-500/10 hover:bg-purple-500/20 text-purple-200 text-xs font-medium flex items-center justify-between transition group text-left"
+                >
+                  <div class="flex items-center gap-2">
                     <span class="text-purple-400">💥</span>
                     <div>
-                      <div class="font-semibold text-slate-200">48h Cluster Heap Thrash</div>
+                      <div class="font-semibold text-slate-200 text-[11px]">15. 48h Cluster Heap Thrash (P1)</div>
                       <div class="text-[10px] text-purple-300">Target: <strong class="text-white">@Rohith D</strong> (Admin/Lead)</div>
                     </div>
                   </div>
                   <div class="text-right font-mono text-[10px]">
-                    <span class="px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300">ASK</span>
+                    <span class="px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold">ASK</span>
                     <div class="text-slate-400 text-[9px] mt-0.5">~4100ms</div>
                   </div>
                 </button>
               </div>
+
             </div>
           </div>
         </div>
 
         <div class="pt-4 border-t border-slate-800 text-[11px] text-slate-400 space-y-1">
           <div class="flex items-center justify-between text-[10px] uppercase font-bold text-slate-500 tracking-wider">
-            <span>On-Call Specialists Matrix</span>
-            <span class="text-emerald-400 font-mono">5 Active</span>
+            <span>Core On-Call Team Matrix</span>
+            <span class="text-emerald-400 font-mono">3 Active</span>
           </div>
           <div class="flex flex-wrap gap-1.5 text-[10px] font-mono">
-            <span class="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-indigo-300">@Rohith D (Admin)</span>
-            <span class="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-cyan-300">@Dachepally (Frontend)</span>
-            <span class="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-amber-300">@Nithish (System)</span>
-            <span class="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-rose-300">@Rahul (Backend)</span>
-            <span class="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-teal-300">@Sam (DevOps)</span>
+            <span class="px-2 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/30 text-indigo-300">👑 @Rohith D (Admin / Project Lead)</span>
+            <span class="px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/30 text-cyan-300">🎨 @Dachepally (Frontend Developer)</span>
+            <span class="px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 text-amber-300">⚙️ @Nithish gajjela (Backend / System Designer)</span>
           </div>
         </div>
       </div>
@@ -365,8 +555,10 @@
       }
     }
 
-    // 1. FRONTEND ACT: @Dachepally (Frontend Developer)
-    function triggerFrontendDeadClick() {
+    // ==========================================
+    // 🎨 FRONTEND INCIDENTS -> @Dachepally (U02DACHEPALLY)
+    // ==========================================
+    function triggerFeDeadClick() {
       clickCount++;
       document.getElementById("click-counter").innerText = `Clicks: ${clickCount}`;
       addTelemetryEvent({
@@ -375,98 +567,305 @@
         statusCode: 0,
         latencyMs: 1000,
         confidence: 94,
-        scenario: "fe_act",
+        scenario: "fe_dead_click",
         assignedSlackId: "U02DACHEPALLY",
         assignedName: "Dachepally",
         message: `Dead click: User clicked button#pay-button ${clickCount}x with 0 DOM mutations or network requests`,
-        fingerprint: "fp_fe_dead_click_pay_btn",
+        fingerprint: "fp_fe_dead_click",
         targetService: "checkout-frontend",
         color: "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
       });
     }
 
-    // 2. BACKEND ACT: @Rahul Verma (Backend Specialist)
-    function triggerBackendDbPool() {
-      const lat = 1420 + Math.floor(Math.random() * 380);
+    function triggerFeHydration() {
+      addTelemetryEvent({
+        kind: "hydration_mismatch",
+        code: "REACT_19_HYDRATION_CRASH",
+        statusCode: 500,
+        latencyMs: 620,
+        confidence: 93,
+        scenario: "fe_hydration",
+        assignedSlackId: "U02DACHEPALLY",
+        assignedName: "Dachepally",
+        message: "React 19 SSR hydration crash on /checkout: server tree differs from client DOM. Modal failed to mount.",
+        fingerprint: "fp_fe_hydration_err",
+        targetService: "checkout-frontend",
+        color: "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
+      });
+    }
+
+    function triggerFeChunk404() {
+      addTelemetryEvent({
+        kind: "resource",
+        code: "CHUNK_LOAD_404_FAILURE",
+        statusCode: 404,
+        latencyMs: 110,
+        confidence: 92,
+        scenario: "fe_chunk_404",
+        assignedSlackId: "U02DACHEPALLY",
+        assignedName: "Dachepally",
+        message: "Loading chunk 1255 failed (404 Not Found) on CDN edge after deployment rollout. White Screen of Death.",
+        fingerprint: "fp_fe_chunk_404",
+        targetService: "cdn-static-assets",
+        color: "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
+      });
+    }
+
+    function triggerFeQuota() {
+      addTelemetryEvent({
+        kind: "storage",
+        code: "LOCALSTORAGE_QUOTA_EXCEEDED",
+        statusCode: 400,
+        latencyMs: 40,
+        confidence: 91,
+        scenario: "fe_quota",
+        assignedSlackId: "U02DACHEPALLY",
+        assignedName: "Dachepally",
+        message: "DOMException QuotaExceededError in localStorage.setItem('ir_cart_session'). 5MB budget exceeded.",
+        fingerprint: "fp_fe_quota_err",
+        targetService: "checkout-frontend",
+        color: "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
+      });
+    }
+
+    function triggerFeCalcDrift() {
+      addTelemetryEvent({
+        kind: "soft_error",
+        code: "TAX_CALCULATION_DRIFT_ASK",
+        statusCode: 200,
+        latencyMs: 1900,
+        confidence: 89,
+        scenario: "fe_calc_drift",
+        assignedSlackId: "U02DACHEPALLY",
+        assignedName: "Dachepally",
+        message: "Checkout calculation drift: floating-point rounding discrepancy on multi-currency tax rate (±0.02).",
+        fingerprint: "fp_fe_calc_drift",
+        targetService: "checkout-frontend",
+        color: "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+      });
+    }
+
+    function triggerFeCsp() {
+      addTelemetryEvent({
+        kind: "security",
+        code: "STRIPE_CSP_DIRECTIVE_BLOCKED",
+        statusCode: 403,
+        latencyMs: 2200,
+        confidence: 90,
+        scenario: "fe_csp_violation",
+        assignedSlackId: "U02DACHEPALLY",
+        assignedName: "Dachepally",
+        message: "Content-Security-Policy directive 'script-src' blocked external payment gateway token loader.",
+        fingerprint: "fp_fe_csp_block",
+        targetService: "checkout-frontend",
+        color: "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+      });
+    }
+
+    // ==========================================
+    // ⚙️ BACKEND / SYSTEM INCIDENTS -> @Nithish gajjela (U03NITHISHSYS)
+    // ==========================================
+    function triggerBeDbPool() {
       addTelemetryEvent({
         kind: "failed_request",
-        code: "DATABASE_POOL_EXHAUSTED",
+        code: "DATABASE_POOL_SATURATED",
         statusCode: 500,
-        latencyMs: lat,
+        latencyMs: 1450,
         confidence: 96,
-        scenario: "be_act",
-        assignedSlackId: "U04RAHULBACK",
-        assignedName: "Rahul Verma",
-        message: "DatabaseConnectionTimeout: pool exhausted after 30000ms at CheckoutController.processPayment()",
-        fingerprint: "fp_be_500_pool_exhaust",
+        scenario: "be_db_pool",
+        assignedSlackId: "U03NITHISHSYS",
+        assignedName: "Nithish gajjela",
+        message: "PostgreSQL connection pool saturated at 98% (max_connections 100 reached). Requests timing out after 30s.",
+        fingerprint: "fp_be_db_pool",
+        targetService: "postgres-primary",
+        color: "bg-rose-500/20 text-rose-300 border border-rose-500/30"
+      });
+    }
+
+    function triggerBeNpe() {
+      addTelemetryEvent({
+        kind: "failed_request",
+        code: "CHECKOUT_CONTROLLER_NPE",
+        statusCode: 500,
+        latencyMs: 1820,
+        confidence: 95,
+        scenario: "be_npe",
+        assignedSlackId: "U03NITHISHSYS",
+        assignedName: "Nithish gajjela",
+        message: "NullPointerException at CheckoutController.java:42 processPayment(). Error rate surged to 42.5%.",
+        fingerprint: "fp_be_controller_npe",
         targetService: "payment-gateway-service",
         color: "bg-rose-500/20 text-rose-300 border border-rose-500/30"
       });
     }
 
-    // 3. DEVOPS ACT: @Sam Taylor (DevOps Specialist)
-    function triggerDevopsCanary() {
-      const lat = 820 + Math.floor(Math.random() * 150);
+    function triggerBeSlowQuery() {
       addTelemetryEvent({
-        kind: "resource",
-        code: "K8S_CANARY_OOM_CRASH",
-        statusCode: 503,
-        latencyMs: lat,
-        confidence: 93,
-        scenario: "devops_act",
-        assignedSlackId: "U05SAMDEVOPS",
-        assignedName: "Sam Taylor",
-        message: "Kubernetes pod CrashLoopBackOff on worker-pool canary replica. Container exit code 137 (OOMKilled).",
-        fingerprint: "fp_devops_k8s_crashloop",
-        targetService: "k8s-worker-pool",
-        color: "bg-teal-500/20 text-teal-300 border border-teal-500/30"
+        kind: "slow_query",
+        code: "ORDERS_UNINDEXED_LOCK_CASCADE",
+        statusCode: 504,
+        latencyMs: 4200,
+        confidence: 94,
+        scenario: "be_slow_query",
+        assignedSlackId: "U03NITHISHSYS",
+        assignedName: "Nithish gajjela",
+        message: "Unindexed sequential scan on orders table holding table lock for 4200ms. 850 concurrent waiting queries.",
+        fingerprint: "fp_be_slow_query",
+        targetService: "postgres-primary",
+        color: "bg-rose-500/20 text-rose-300 border border-rose-500/30"
       });
     }
 
-    // 4. SYSTEM ARCHITECTURE ASK: @Nithish gajjela (System Designer)
-    function triggerSystemDesync() {
-      const lat = 2480 + Math.floor(Math.random() * 620);
+    function triggerBeRedisOOM() {
       addTelemetryEvent({
-        kind: "soft_error",
-        code: "AUTH_GATEWAY_DESYNC_504",
-        statusCode: 200,
-        latencyMs: lat,
-        confidence: 91,
-        scenario: "sys_ask",
+        kind: "resource",
+        code: "REDIS_MAXMEMORY_OOM",
+        statusCode: 503,
+        latencyMs: 950,
+        confidence: 93,
+        scenario: "be_redis_oom",
         assignedSlackId: "U03NITHISHSYS",
         assignedName: "Nithish gajjela",
-        message: "Telemetry Contradiction: Nominal 2ms query latency but auth gateway rejects 85% requests across split-brain regions.",
+        message: "Redis maxmemory limit reached (2048MB used of 2048MB); OOM command not allowed on user sessions.",
+        fingerprint: "fp_be_redis_oom",
+        targetService: "redis-cache-cluster",
+        color: "bg-rose-500/20 text-rose-300 border border-rose-500/30"
+      });
+    }
+
+    function triggerBeAuthDesync() {
+      addTelemetryEvent({
+        kind: "soft_error",
+        code: "AUTH_GATEWAY_SPLIT_BRAIN_ASK",
+        statusCode: 200,
+        latencyMs: 2600,
+        confidence: 91,
+        scenario: "be_auth_desync",
+        assignedSlackId: "U03NITHISHSYS",
+        assignedName: "Nithish gajjela",
+        message: "Telemetry Contradiction: Ingress reports 2.1ms nominal latency while auth gateway rejects 85% requests.",
         fingerprint: "fp_sys_auth_split_brain",
         targetService: "auth-gateway-service",
         color: "bg-amber-500/20 text-amber-300 border border-amber-500/30"
       });
     }
 
-    // 5. ADMIN / LEAD ASK: @Rohith D (Admin / Project Lead)
-    function triggerClusterOOM() {
-      const lat = 3850 + Math.floor(Math.random() * 950);
+    function triggerBeKafkaLag() {
+      addTelemetryEvent({
+        kind: "backpressure",
+        code: "EVENT_STREAM_CONSUMER_LAG_ASK",
+        statusCode: 200,
+        latencyMs: 3100,
+        confidence: 92,
+        scenario: "be_kafka_lag",
+        assignedSlackId: "U03NITHISHSYS",
+        assignedName: "Nithish gajjela",
+        message: "Event stream consumer lag spike: 45,000 uncommitted messages on order-events topic. Consumer drift growing.",
+        fingerprint: "fp_be_kafka_lag",
+        targetService: "event-stream-consumer",
+        color: "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+      });
+    }
+
+    function triggerBe504Cascade() {
+      addTelemetryEvent({
+        kind: "gateway_timeout",
+        code: "BANKING_PARTNER_504_CASCADE",
+        statusCode: 504,
+        latencyMs: 2850,
+        confidence: 90,
+        scenario: "be_504_cascade",
+        assignedSlackId: "U03NITHISHSYS",
+        assignedName: "Nithish gajjela",
+        message: "Downstream banking partner switch intermittent 504 Gateway Timeouts propagating across 4 microservices.",
+        fingerprint: "fp_be_504_cascade",
+        targetService: "banking-switch-core",
+        color: "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+      });
+    }
+
+    // ==========================================
+    // 👑 ADMIN / PROJECT LEAD INCIDENTS -> @Rohith D (U01ROHITHADMIN)
+    // ==========================================
+    function triggerAdminCanary() {
+      addTelemetryEvent({
+        kind: "canary_breach",
+        code: "CANARY_ERROR_THRESHOLD_BREACH",
+        statusCode: 500,
+        latencyMs: 1200,
+        confidence: 96,
+        scenario: "admin_canary_fail",
+        assignedSlackId: "U01ROHITHADMIN",
+        assignedName: "Rohith D",
+        message: "Canary deployment payment-api v2.4.1 breached 1.0% error rate SLA threshold (actual: 42.5%).",
+        fingerprint: "fp_admin_canary_breach",
+        targetService: "payment-api-canary",
+        color: "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+      });
+    }
+
+    function triggerAdminCircuit() {
+      addTelemetryEvent({
+        kind: "circuit_breaker",
+        code: "PAYMENT_CIRCUIT_BREAKER_OPEN",
+        statusCode: 503,
+        latencyMs: 350,
+        confidence: 95,
+        scenario: "admin_circuit_breaker",
+        assignedSlackId: "U01ROHITHADMIN",
+        assignedName: "Rohith D",
+        message: "Payment Gateway Circuit Breaker state transitioned to OPEN after 50 consecutive failed requests.",
+        fingerprint: "fp_admin_circuit_open",
+        targetService: "payment-gateway-service",
+        color: "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+      });
+    }
+
+    function triggerAdminHeapOOM() {
       addTelemetryEvent({
         kind: "rejection",
         code: "HEAP_OUT_OF_MEMORY_P1",
         statusCode: 503,
-        latencyMs: lat,
+        latencyMs: 4100,
         confidence: 95,
-        scenario: "ask",
+        scenario: "admin_heap_oom",
         assignedSlackId: "U01ROHITHADMIN",
         assignedName: "Rohith D",
-        message: "FATAL: Gradual cluster heap memory thrash over 48h (92% saturation). 50,000 active sessions affected.",
-        fingerprint: "fp_heap_oom_cluster",
+        message: "FATAL: Gradual cluster heap memory thrash over 48h (92% saturation). 50,000 active sessions affected (P1).",
+        fingerprint: "fp_admin_heap_oom",
         targetService: "worker-cluster-pool",
         color: "bg-purple-500/20 text-purple-300 border border-purple-500/30"
       });
     }
 
+    function triggerAdminDdos() {
+      addTelemetryEvent({
+        kind: "ddos",
+        code: "INGRESS_RATE_DDOS_SPIKE",
+        statusCode: 429,
+        latencyMs: 1600,
+        confidence: 93,
+        scenario: "admin_ddos_spike",
+        assignedSlackId: "U01ROHITHADMIN",
+        assignedName: "Rohith D",
+        message: "Ingress anomaly: 10,000 req/s concentrated from suspicious IP CIDR pool on /api/payouts. Rate limits breached.",
+        fingerprint: "fp_admin_ddos_spike",
+        targetService: "api-gateway",
+        color: "bg-purple-500/20 text-purple-300 border border-purple-500/30"
+      });
+    }
+
     // Aliases for compatibility
-    const triggerDeadClick = triggerFrontendDeadClick;
-    const trigger500 = triggerBackendDbPool;
-    const triggerSoftError = triggerSystemDesync;
-    const trigger404 = triggerDevopsCanary;
-    const triggerOOM = triggerClusterOOM;
+    const triggerFrontendDeadClick = triggerFeDeadClick;
+    const triggerDeadClick = triggerFeDeadClick;
+    const triggerBackendDbPool = triggerBeDbPool;
+    const trigger500 = triggerBeDbPool;
+    const triggerSystemDesync = triggerBeAuthDesync;
+    const triggerSoftError = triggerBeAuthDesync;
+    const triggerDevopsCanary = triggerAdminCanary;
+    const trigger404 = triggerFeChunk404;
+    const triggerClusterOOM = triggerAdminHeapOOM;
+    const triggerOOM = triggerAdminHeapOOM;
   </script>
 </body>
 </html>

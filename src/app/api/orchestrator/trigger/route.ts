@@ -44,8 +44,10 @@ export async function POST(req: NextRequest) {
     let assignedSlackId = "U01ROHITHADMIN";
     let assignedName = "Rohith D";
 
-    // 1. FRONTEND ACT: Dead Click / UI Freeze -> @Dachepally
-    if (scenario === "fe_act" || scenario === "frontend_act" || scenario === "dead_click") {
+    // ==========================================
+    // 🎨 FRONTEND INCIDENTS -> @Dachepally (U02DACHEPALLY)
+    // ==========================================
+    if (scenario === "fe_dead_click" || scenario === "dead_click" || scenario === "fe_act") {
       run_id = `run_fe_act_${timestamp}`;
       incident_id = `inc_fe_dead_click_${timestamp}`;
       evidence = [
@@ -56,36 +58,112 @@ export async function POST(req: NextRequest) {
       permitted_actions = ["rollback_latest_deploy", "disable_demo_feature_flag"];
       assignedSlackId = "U02DACHEPALLY";
       assignedName = "Dachepally";
-    }
-    // 2. BACKEND ACT: Database Pool Exhaustion NPE -> @Rahul Verma
-    else if (scenario === "be_act" || scenario === "backend_act" || scenario === "database") {
-      run_id = `run_be_act_${timestamp}`;
-      incident_id = `inc_be_db_exhaustion_${timestamp}`;
+    } else if (scenario === "fe_hydration") {
+      run_id = `run_fe_hydration_${timestamp}`;
+      incident_id = `inc_fe_hydration_${timestamp}`;
       evidence = [
-        { item: "CheckoutController.processPayment NullPointerException in deploy v2.4.1" },
-        { item: "PostgreSQL connection pool saturated at 98% (max_connections 100 reached)" },
-        { item: "Downstream API response latency surged from 45ms to 2400ms" },
+        { item: "React 19 SSR hydration mismatch: server rendered tree did not match client on /checkout" },
+        { item: "Payment modal failed to mount; client unhandled exception trapped by window.onerror" },
+        { item: "Regression introduced in latest frontend asset build fe-v1.8.2" },
+      ];
+      permitted_actions = ["rollback_latest_deploy", "disable_demo_feature_flag"];
+      assignedSlackId = "U02DACHEPALLY";
+      assignedName = "Dachepally";
+    } else if (scenario === "fe_chunk_404") {
+      run_id = `run_fe_chunk_${timestamp}`;
+      incident_id = `inc_fe_chunk_404_${timestamp}`;
+      evidence = [
+        { item: "Loading chunk 1255 failed (404 Not Found) on CDN edge" },
+        { item: "Stale cache index.html referencing pruned script hash after deployment rollout" },
+        { item: "340 users trapped in White Screen of Death on checkout load" },
       ];
       permitted_actions = ["rollback_latest_deploy", "restart_demo_service"];
-      assignedSlackId = "U04RAHULBACK";
-      assignedName = "Rahul Verma";
-    }
-    // 3. DEVOPS ACT: Canary Health CrashLoop -> @Sam Taylor
-    else if (scenario === "devops_act" || scenario === "devops" || scenario === "canary") {
-      run_id = `run_devops_act_${timestamp}`;
-      incident_id = `inc_devops_canary_${timestamp}`;
+      assignedSlackId = "U02DACHEPALLY";
+      assignedName = "Dachepally";
+    } else if (scenario === "fe_quota") {
+      run_id = `run_fe_quota_${timestamp}`;
+      incident_id = `inc_fe_quota_${timestamp}`;
       evidence = [
-        { item: "Kubernetes worker-pool canary pods failing liveness probe" },
-        { item: "Container exit code 137 (OOMKilled by Linux cgroup memory limit)" },
-        { item: "Traffic router shifting 100% requests away from degraded canary pods" },
+        { item: "DOMException: QuotaExceededError in localStorage.setItem('ir_cart_session')" },
+        { item: "Unbounded telemetry logging filled 5MB client browser storage budget" },
+        { item: "Safe fallback: disable aggressive client telemetry feature flag" },
       ];
-      permitted_actions = ["restart_demo_service", "rollback_latest_deploy"];
-      assignedSlackId = "U05SAMDEVOPS";
-      assignedName = "Sam Taylor";
+      permitted_actions = ["disable_demo_feature_flag", "rollback_latest_deploy"];
+      assignedSlackId = "U02DACHEPALLY";
+      assignedName = "Dachepally";
+    } else if (scenario === "fe_calc_drift") {
+      run_id = `run_fe_calc_drift_ask_${timestamp}`;
+      incident_id = `inc_fe_calc_drift_${timestamp}`;
+      evidence = [
+        { item: "Checkout calculation drift: floating-point rounding discrepancy on multi-currency tax rate (±0.02)" },
+        { item: "Discrepancy observed across 1,200 international orders" },
+        { item: "Blast radius uncertain: disabling tax optimization flag requires human sign-off" },
+      ];
+      permitted_actions = ["disable_demo_feature_flag", "restart_demo_service"];
+      assignedSlackId = "U02DACHEPALLY";
+      assignedName = "Dachepally";
+    } else if (scenario === "fe_csp_violation") {
+      run_id = `run_fe_csp_ask_${timestamp}`;
+      incident_id = `inc_fe_csp_${timestamp}`;
+      evidence = [
+        { item: "Content-Security-Policy directive 'script-src' blocked external payment gateway token loader" },
+        { item: "18% checkout submits failing before token exchange" },
+        { item: "Modifying security header requires human engineer review" },
+      ];
+      permitted_actions = ["disable_demo_feature_flag", "rollback_latest_deploy"];
+      assignedSlackId = "U02DACHEPALLY";
+      assignedName = "Dachepally";
     }
-    // 4. SYSTEM ARCHITECTURE ASK: Distributed Telemetry Contradiction -> @Nithish gajjela
-    else if (scenario === "sys_ask" || scenario === "system_ask" || scenario === "desync") {
-      run_id = `run_sys_ask_${timestamp}`;
+
+    // ==========================================
+    // ⚙️ BACKEND / SYSTEM INCIDENTS -> @Nithish gajjela (U03NITHISHSYS)
+    // ==========================================
+    else if (scenario === "be_db_pool" || scenario === "be_act" || scenario === "database") {
+      run_id = `run_be_db_act_${timestamp}`;
+      incident_id = `inc_be_db_pool_${timestamp}`;
+      evidence = [
+        { item: "PostgreSQL connection pool saturated at 98% (max_connections 100 reached)" },
+        { item: "CheckoutController.processPayment waiting >30000ms for db connection" },
+        { item: "Correlates directly with deployment of payment-api v2.4.1" },
+      ];
+      permitted_actions = ["rollback_latest_deploy", "restart_demo_service"];
+      assignedSlackId = "U03NITHISHSYS";
+      assignedName = "Nithish gajjela";
+    } else if (scenario === "be_npe") {
+      run_id = `run_be_npe_act_${timestamp}`;
+      incident_id = `inc_be_npe_${timestamp}`;
+      evidence = [
+        { item: "NullPointerException at CheckoutController.java:42 processPayment()" },
+        { item: "Error rate surged from 0.2% to 42.5% immediately following deploy v2.4.1" },
+        { item: "Database and network health nominal (12ms), confirmed application defect" },
+      ];
+      permitted_actions = ["rollback_latest_deploy", "disable_demo_feature_flag"];
+      assignedSlackId = "U03NITHISHSYS";
+      assignedName = "Nithish gajjela";
+    } else if (scenario === "be_slow_query") {
+      run_id = `run_be_slow_query_act_${timestamp}`;
+      incident_id = `inc_be_slow_query_${timestamp}`;
+      evidence = [
+        { item: "Unindexed sequential scan on orders table holding table lock for 4200ms" },
+        { item: "Query execution queue backed up to 850 concurrent waiting transactions" },
+        { item: "Introduced in recent database schema change script" },
+      ];
+      permitted_actions = ["rollback_latest_deploy", "restart_demo_service"];
+      assignedSlackId = "U03NITHISHSYS";
+      assignedName = "Nithish gajjela";
+    } else if (scenario === "be_redis_oom") {
+      run_id = `run_be_redis_act_${timestamp}`;
+      incident_id = `inc_be_redis_oom_${timestamp}`;
+      evidence = [
+        { item: "Redis maxmemory limit reached (2048MB used of 2048MB); OOM command not allowed" },
+        { item: "User sessions failing to persist; session token lookup dropping to 0% success" },
+        { item: "Safe catalogue remediation: restart cache service with flush policy" },
+      ];
+      permitted_actions = ["restart_demo_service", "disable_demo_feature_flag"];
+      assignedSlackId = "U03NITHISHSYS";
+      assignedName = "Nithish gajjela";
+    } else if (scenario === "be_auth_desync" || scenario === "sys_ask" || scenario === "desync") {
+      run_id = `run_sys_desync_ask_${timestamp}`;
       incident_id = `inc_sys_desync_${timestamp}`;
       evidence = [
         { item: "Telemetry contradiction: Ingress reports 2.1ms latency while auth-gateway reports 85% failures" },
@@ -95,23 +173,78 @@ export async function POST(req: NextRequest) {
       permitted_actions = ["disable_demo_feature_flag", "restart_demo_service"];
       assignedSlackId = "U03NITHISHSYS";
       assignedName = "Nithish gajjela";
-    }
-    // 5. ADMIN / LEAD ASK: 48h Cluster Heap Thrash P1 -> @Rohith D
-    else if (scenario === "ask" || scenario === "admin_ask" || scenario === "heap_oom") {
-      run_id = `run_ask_${timestamp}`;
-      incident_id = `inc_memory_leak_${timestamp}`;
+    } else if (scenario === "be_kafka_lag") {
+      run_id = `run_be_kafka_ask_${timestamp}`;
+      incident_id = `inc_be_kafka_lag_${timestamp}`;
       evidence = [
-        { item: "Memory consumption climbing gradually across cluster over 48 hours (92% reached)" },
-        { item: "No recent deployments in the last 3 days" },
-        { item: "Intermittent 504 timeouts cascading across 4 unrelated downstream microservices" },
-        { item: "Multi-service blast radius: remediation restart affects 50,000 active sessions" },
+        { item: "Event stream consumer lag spike: 45,000 uncommitted messages on order-events topic" },
+        { item: "Consumer group offset drift growing by 2,000 msg/sec" },
+        { item: "Restarting consumer group may cause duplicate message delivery; requires human sign-off" },
+      ];
+      permitted_actions = ["restart_demo_service", "disable_demo_feature_flag"];
+      assignedSlackId = "U03NITHISHSYS";
+      assignedName = "Nithish gajjela";
+    } else if (scenario === "be_504_cascade") {
+      run_id = `run_be_504_ask_${timestamp}`;
+      incident_id = `inc_be_504_cascade_${timestamp}`;
+      evidence = [
+        { item: "Downstream banking partner switch intermittent 504 Gateway Timeouts across 4 microservices" },
+        { item: "Connection queue backpressure propagating upstream to payment API" },
+        { item: "Proposed remediation to disable partner routing flag requires engineer approval" },
+      ];
+      permitted_actions = ["disable_demo_feature_flag", "restart_demo_service"];
+      assignedSlackId = "U03NITHISHSYS";
+      assignedName = "Nithish gajjela";
+    }
+
+    // ==========================================
+    // 👑 ADMIN / PROJECT LEAD INCIDENTS -> @Rohith D (U01ROHITHADMIN)
+    // ==========================================
+    else if (scenario === "admin_canary_fail" || scenario === "canary") {
+      run_id = `run_admin_canary_act_${timestamp}`;
+      incident_id = `inc_admin_canary_${timestamp}`;
+      evidence = [
+        { item: "Canary deployment payment-api v2.4.1 breached 1.0% error rate SLA threshold (actual: 42.5%)" },
+        { item: "Automated canary health gate failed 3 consecutive evaluations" },
+        { item: "Autonomous catalogue action: roll back canary release to stable v2.4.0" },
+      ];
+      permitted_actions = ["rollback_latest_deploy", "disable_demo_feature_flag"];
+      assignedSlackId = "U01ROHITHADMIN";
+      assignedName = "Rohith D";
+    } else if (scenario === "admin_circuit_breaker") {
+      run_id = `run_admin_circuit_act_${timestamp}`;
+      incident_id = `inc_admin_circuit_${timestamp}`;
+      evidence = [
+        { item: "Payment Gateway Circuit Breaker state transitioned to OPEN after 50 consecutive failed requests" },
+        { item: "100% of checkout payments failing fast with CircuitBreakerOpenException" },
+        { item: "Autonomous action: disable demo payment feature flag and route to backup provider" },
+      ];
+      permitted_actions = ["disable_demo_feature_flag", "restart_demo_service"];
+      assignedSlackId = "U01ROHITHADMIN";
+      assignedName = "Rohith D";
+    } else if (scenario === "admin_heap_oom" || scenario === "ask" || scenario === "heap_oom") {
+      run_id = `run_admin_heap_ask_${timestamp}`;
+      incident_id = `inc_admin_heap_oom_${timestamp}`;
+      evidence = [
+        { item: "Gradual cluster heap memory thrash over 48 hours (92% saturation reached)" },
+        { item: "No recent deployments in the last 3 days; leak origin unconfirmed across microservices" },
+        { item: "Multi-service blast radius: remediation restart affects 50,000 active sessions (Admin sign-off required)" },
       ];
       permitted_actions = ["restart_demo_service", "disable_demo_feature_flag"];
       assignedSlackId = "U01ROHITHADMIN";
       assignedName = "Rohith D";
-    }
-    // 6. GENERAL NOTIFY / ESCALATION
-    else if (scenario === "notify") {
+    } else if (scenario === "admin_ddos_spike") {
+      run_id = `run_admin_ddos_ask_${timestamp}`;
+      incident_id = `inc_admin_ddos_${timestamp}`;
+      evidence = [
+        { item: "Ingress anomaly: 10,000 req/s concentrated from suspicious IP CIDR pool on /api/payouts" },
+        { item: "API Gateway rate limiters saturated; legitimate payout workflows degraded" },
+        { item: "Enabling global emergency DDoS mitigation filter requires Admin authorization" },
+      ];
+      permitted_actions = ["disable_demo_feature_flag", "restart_demo_service"];
+      assignedSlackId = "U01ROHITHADMIN";
+      assignedName = "Rohith D";
+    } else if (scenario === "notify") {
       run_id = `run_notify_${timestamp}`;
       incident_id = `inc_contradictory_${timestamp}`;
       evidence = [
@@ -121,8 +254,8 @@ export async function POST(req: NextRequest) {
         { item: "Conflicting health signals reported across cluster nodes" },
       ];
       permitted_actions = ["restart_demo_service"];
-      assignedSlackId = "U03NITHISHSYS";
-      assignedName = "Nithish gajjela";
+      assignedSlackId = "U01ROHITHADMIN";
+      assignedName = "Rohith D";
     }
 
     // Override with explicit client parameters if provided
