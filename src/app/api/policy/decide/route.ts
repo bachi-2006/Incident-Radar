@@ -115,15 +115,16 @@ export async function POST(req: NextRequest) {
       rule_id = "R4_LOW_EVIDENCE_REVIEW";
       reason = "Telemetry signals inconclusive or conflicting. Requires human-in-the-loop sign-off.";
       requiredRole = body.affected_services?.length >= 2 ? "maintainer" : "responder";
-      approvalToken = generateApprovalToken(run_id);
+      approvalToken = generateApprovalToken(run_id, 30 * 60 * 1000, { requiredRole, targetService });
     } else {
       decision = "NOTIFY";
       rule_id = "R7_ACTION_CONTEXT_MISMATCH";
       reason = "Contradictory evidence or unsupported action. Escalating to on-call engineer.";
     }
 
-    const approveUrl = `${baseUrl}/approve/${run_id}?t=${approvalToken || generateApprovalToken(run_id)}`;
-    const ackLink = `${baseUrl}/a/${run_id}?action=ack&t=${approvalToken || generateApprovalToken(run_id)}`;
+    const effectiveToken = approvalToken || generateApprovalToken(run_id, 30 * 60 * 1000, { requiredRole, targetService });
+    const approveUrl = `${baseUrl}/approve/${run_id}?t=${effectiveToken}`;
+    const ackLink = `${baseUrl}/a/${run_id}?action=ack&t=${effectiveToken}`;
 
     let slack_dm_text = "";
     let slack_channel_summary = `🚨 *Incident ${incident_id} assigned to ${assignedHandle.replace(/^@/, "")} (${category})*, confidence ${Math.round(categoryConfidence * 100)}%. A direct message was sent to the assignee.`;
@@ -177,12 +178,23 @@ export async function POST(req: NextRequest) {
       required_role: requiredRole,
     });
 
+    const mode = body.mode || active?.mode || (process.env.EXECUTION_MODE === "LIVE" ? "LIVE" : "SIMULATION");
+
+    await updateRunState(run_id, {
+      decision,
+      rule_id,
+      required_role: requiredRole,
+      target_service: targetService,
+      mode,
+      status: decision === "ASK" ? "awaiting_approval" : decision === "ACT" ? "running" : "escalated",
+    });
+
     await recordAuditLog({
       project_id,
       actor: "workato:ir-orchestrator",
       action: "policy_evaluated",
       target: run_id,
-      detail: { decision, rule_id, recommended_action, assessment_status, assignedSlackId, category, deadline },
+      detail: { decision, rule_id, recommended_action, assessment_status, assignedSlackId, category, deadline, mode },
     });
 
     // Optionally update agent_runs if present in Supabase
@@ -215,6 +227,7 @@ export async function POST(req: NextRequest) {
       category,
       category_confidence: categoryConfidence,
       deadline,
+      mode,
       assigned_user_slack_id: assignedSlackId,
       assigned_user_name: assignedHandle.replace(/^@/, ""),
       assigned_user_role: assignedRole,

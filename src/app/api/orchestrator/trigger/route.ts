@@ -369,7 +369,8 @@ export async function POST(req: NextRequest) {
     }
 
     const executionCategory = scenario.includes("ask") ? "ask" : scenario === "notify" ? "notify" : "act";
-    setActiveRun(run_id, incident_id, executionCategory);
+    const mode = body.mode || (process.env.EXECUTION_MODE === "LIVE" ? "LIVE" : "SIMULATION");
+    await setActiveRun(run_id, incident_id, executionCategory, "00000000-0000-0000-0000-000000000002", mode);
 
     const res = await fetch(webhookUrl, {
       method: "POST",
@@ -381,6 +382,7 @@ export async function POST(req: NextRequest) {
         project_id: "00000000-0000-0000-0000-000000000002",
         run_id,
         incident_id,
+        mode,
         category: calculatedCategory,
         category_confidence: Math.round(combinedScores.confidence * 100) / 100,
         evidence,

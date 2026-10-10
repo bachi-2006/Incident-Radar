@@ -263,7 +263,7 @@ export async function getEventsByIncident(incidentId: string): Promise<Event[]> 
   const allEvents: Event[] = (allEventRows as any[]).map(mapDbEventToUi);
 
   // Get incident affected services for intelligent contextual matching
-  let incident = await getIncident(incidentId).catch(() => null);
+  const incident = await getIncident(incidentId).catch(() => null);
   const affected = (incident?.affectedServices || []).map((s) => s.toLowerCase());
   const primarySvc = (incident?.service || "").toLowerCase();
 

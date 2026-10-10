@@ -1,30 +1,57 @@
-import { generateRecoveryReceipt } from '@/lib/receipt';
-import { createClient } from '@/lib/supabase';
+import { NextRequest, NextResponse } from "next/server";
+import { generateRecoveryReceipt } from "@/lib/receipt";
+import { getRunById } from "@/lib/run-state";
 
-export async function POST(req: Request) {
+async function handleReceiptRequest(
+  req: NextRequest,
+  paramsPromise: Promise<{ id: string }>
+) {
   try {
+    const { id } = await paramsPromise;
     const { searchParams } = new URL(req.url);
-    const runId = searchParams.get('id');
+    const runId = id || searchParams.get("id");
 
     if (!runId) {
-      return Response.json({ error: { code: 'MISSING_ID', message: 'Run ID is required' } }, { status: 400 });
+      return NextResponse.json(
+        { error: { code: "MISSING_ID", message: "Run ID is required" } },
+        { status: 400 }
+      );
     }
 
-    const supabase = createClient();
-    const { data: run } = await supabase.from('agent_runs').select('*').eq('id', runId).single();
-
+    const run = await getRunById(runId);
     if (!run) {
-      return Response.json({ error: { code: 'NOT_FOUND', message: 'Run not found' } }, { status: 404 });
-    }
-
-    if (run.status !== 'resolved' && run.status !== 'failed' && run.status !== 'escalated') {
-      return Response.json({ error: { code: 'NOT_FINALIZED', message: 'Receipt can only be generated for terminal runs' } }, { status: 400 });
+      return NextResponse.json(
+        { error: { code: "NOT_FOUND", message: `Run '${runId}' not found` } },
+        { status: 404 }
+      );
     }
 
     const result = await generateRecoveryReceipt(runId);
 
-    return Response.json(result);
+    return NextResponse.json({
+      success: true,
+      run_id: runId,
+      receipt_sha256: result.hash,
+      receipt: result.receipt,
+    });
   } catch (error: any) {
-    return Response.json({ error: { code: 'INTERNAL_ERROR', message: error.message } }, { status: 500 });
+    return NextResponse.json(
+      { error: { code: "INTERNAL_ERROR", message: error.message } },
+      { status: 500 }
+    );
   }
+}
+
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  return handleReceiptRequest(req, params);
+}
+
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  return handleReceiptRequest(req, params);
 }

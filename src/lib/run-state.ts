@@ -1,5 +1,14 @@
 import { supabaseAdmin } from "@/lib/supabase";
 
+export interface RecoverySample {
+  sample_id: string;
+  timestamp: string;
+  error_rate: number;
+  p95_latency: number;
+  is_healthy: boolean;
+  source: string;
+}
+
 export interface RunStateRecord {
   id: string;
   project_id?: string;
@@ -7,12 +16,19 @@ export interface RunStateRecord {
   scenario?: string;
   decision?: string;
   rule_id?: string;
-  status: "running" | "awaiting_approval" | "approved" | "rejected" | "resolved" | "failed" | "escalated";
+  status: "running" | "awaiting_approval" | "approved" | "rejected" | "verifying" | "resolved" | "failed" | "escalated";
   required_role?: string;
   approval_token_hash?: string;
   approved_by?: string;
-  verify_samples?: any[];
+  mode?: "LIVE" | "SIMULATION";
+  target_service?: string;
+  action_executed?: string;
+  action_execution_id?: string;
+  action_output?: Record<string, any>;
+  verify_samples?: RecoverySample[];
+  recovery_streak?: number;
   receipt_sha256?: string;
+  receipt_payload?: Record<string, any>;
   poll_count?: number;
   created_at?: string;
   updated_at?: string;
@@ -37,7 +53,8 @@ export async function setActiveRun(
   runId: string,
   incidentId?: string,
   scenario?: "act" | "ask" | "notify" | string,
-  projectId = "proj_demo"
+  projectId = "proj_demo",
+  mode: "LIVE" | "SIMULATION" = "SIMULATION"
 ): Promise<RunStateRecord> {
   lastActiveRunId = runId;
 
@@ -46,8 +63,10 @@ export async function setActiveRun(
     project_id: projectId,
     incident_id: incidentId,
     scenario,
+    mode,
     status: "running",
     poll_count: 0,
+    recovery_streak: 0,
     verify_samples: [],
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
@@ -84,7 +103,8 @@ export async function getRunById(runId: string): Promise<RunStateRecord | null> 
         .single();
 
       if (!error && data) {
-        return data as RunStateRecord;
+        const mem = inMemoryRuns.get(runId) || {};
+        return { ...mem, ...(data as any) } as RunStateRecord;
       }
     } catch {
       // Fallback to in-memory on DB failure
@@ -137,6 +157,45 @@ export async function updateRunState(
   }
 
   return updated;
+}
+
+export async function recordRecoverySample(
+  runId: string,
+  sample: RecoverySample
+): Promise<{ samples: RecoverySample[]; streak: number }> {
+  const run = (await getRunById(runId)) || { id: runId, status: "running" };
+  const samples = [...(run.verify_samples || []), sample];
+
+  // Calculate consecutive healthy samples from the tail
+  let streak = 0;
+  for (let i = samples.length - 1; i >= 0; i--) {
+    if (samples[i].is_healthy) {
+      streak++;
+    } else {
+      break;
+    }
+  }
+
+  await updateRunState(runId, {
+    verify_samples: samples,
+    recovery_streak: streak,
+  });
+
+  if (supabaseAdmin) {
+    try {
+      await (supabaseAdmin as any).from("recovery_samples").insert({
+        run_id: runId,
+        error_rate: sample.error_rate,
+        p95_latency: sample.p95_latency,
+        health_status: sample.is_healthy ? "healthy" : "recovering",
+        source: sample.source,
+      });
+    } catch {
+      // Non-blocking fallback
+    }
+  }
+
+  return { samples, streak };
 }
 
 export async function incrementRunPollCount(runId: string): Promise<number> {

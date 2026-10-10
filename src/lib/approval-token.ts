@@ -1,23 +1,35 @@
 import crypto from "crypto";
 
-const DEFAULT_SECRET = "12ed97e9fc175a0608e08d8bafae0d08a040e4112880d0f5ad69064731f9e900";
-
 export interface TokenPayload {
   runId: string;
   exp: number;
   nonce: string;
+  requiredRole?: string;
+  targetService?: string;
 }
 
 function getSigningSecret(): string {
-  return process.env.APPROVAL_SIGNING_SECRET || DEFAULT_SECRET;
+  const secret = process.env.APPROVAL_SIGNING_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("APPROVAL_SIGNING_SECRET is not configured in production");
+    }
+    return "12ed97e9fc175a0608e08d8bafae0d08a040e4112880d0f5ad69064731f9e900";
+  }
+  return secret;
 }
 
-export function generateApprovalToken(runId: string, ttlMs = 30 * 60 * 1000): string {
+export function generateApprovalToken(
+  runId: string,
+  ttlMs = 30 * 60 * 1000,
+  extra?: { requiredRole?: string; targetService?: string }
+): string {
   const secret = getSigningSecret();
   const payload: TokenPayload = {
     runId,
     exp: Date.now() + ttlMs,
     nonce: crypto.randomBytes(8).toString("hex"),
+    ...(extra || {}),
   };
 
   const payloadEncoded = Buffer.from(JSON.stringify(payload)).toString("base64url");
@@ -42,7 +54,12 @@ export function verifyApprovalToken(
   }
 
   const [payloadEncoded, signature] = token.split(".");
-  const secret = getSigningSecret();
+  let secret: string;
+  try {
+    secret = getSigningSecret();
+  } catch (err: any) {
+    return { valid: false, reason: err.message || "Signing secret unavailable" };
+  }
 
   const expectedSignature = crypto
     .createHmac("sha256", secret)
