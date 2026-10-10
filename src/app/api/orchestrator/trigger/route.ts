@@ -280,6 +280,8 @@ export async function POST(req: NextRequest) {
         permitted_actions,
         assigned_user_slack_id: assignedSlackId,
         assigned_user_name: assignedName,
+        slack_destination_type: "USER_DM", // Explicitly tell Workato to use a DM, not a channel
+        debug_routing_info: `Routing scenario ${scenario} to user ${assignedName} (${assignedSlackId})`
       }),
     });
 
