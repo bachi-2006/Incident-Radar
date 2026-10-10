@@ -10,9 +10,11 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json().catch(() => ({}));
     const hour = body.hour || new Date().toISOString();
+    const projectId = body.project_id || "00000000-0000-0000-0000-000000000002";
+    const baseUrl = process.env.APP_BASE_URL || "https://incident-radar.onrender.com";
 
     const stats = {
-      project_id: "00000000-0000-0000-0000-000000000002",
+      project_id: projectId,
       hour,
       uptime_pct: 99.8,
       p95_latency_ms: 104,
@@ -29,12 +31,24 @@ export async function POST(req: NextRequest) {
       assignments_overdue: 0,
     };
 
+    // System stats broadcast formatted for Slack (#all-incident-radar)
+    const slackMessage = `📊 *System Stats Rollup — #all-incident-radar*\n` +
+      `• *Project*: Incident Radar Core (\`${projectId.substring(0, 8)}...\`)\n` +
+      `• *Uptime*: ${stats.uptime_pct}% | *p95 Latency*: ${stats.p95_latency_ms}ms\n` +
+      `• *Probes*: ${stats.probe_count} OK / ${stats.probe_failures} failed\n` +
+      `• *Client Errors*: ${stats.client_error_count} captured via SDK\n` +
+      `• *CI/CD*: ${stats.ci_runs} runs (${(stats.ci_pass_rate * 100).toFixed(0)}% pass rate) | Deploys: ${stats.deploys}\n` +
+      `• *Incidents*: ${stats.incidents_opened} opened, ${stats.incidents_resolved} resolved (MTTR: ${stats.mttr_minutes}m)\n` +
+      `• *Admin*: <@U01ROHITHADMIN> (Rohith D) | <${baseUrl}/stats|View Live Dashboard>`;
+
     return NextResponse.json({
       projects: [
         {
           project_id: stats.project_id,
           stats,
-          breaches: [], // no SLA breaches
+          breaches: [],
+          slack_channel: "#all-incident-radar",
+          slack_message: slackMessage,
         },
       ],
       rolled_up_at: new Date().toISOString(),

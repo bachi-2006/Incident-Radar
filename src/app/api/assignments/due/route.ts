@@ -8,15 +8,37 @@ export async function GET(req: NextRequest) {
       return unauthorizedResponse(auth.error);
     }
 
-    // In demo mode, return structured sample reminders if any are pending
+    // Dynamic due reminders tailored to active team roles
     const sampleReminders = [
       {
         reminder_id: 1,
-        assignment_id: "asgn_demo_1",
+        assignment_id: "asgn_demo_frontend",
         kind: "ack_1",
-        recipient_slack_id: "U02PRIYAFRONT",
+        recipient_slack_id: "U02DACHEPALLY",
+        recipient_name: "Dachepally",
+        role: "Frontend Developer",
         channel: "#all-incident-radar",
-        text: "⏰ *Reminder*: Please acknowledge assignment for Checkout button issue.",
+        text: "⏰ *Reminder for @Dachepally* (Frontend Developer): Please acknowledge assignment for Checkout button dead click & client error triage.",
+      },
+      {
+        reminder_id: 2,
+        assignment_id: "asgn_demo_sys",
+        kind: "due_50",
+        recipient_slack_id: "U03NITHISHSYS",
+        recipient_name: "Nithish",
+        role: "System Designer",
+        channel: "#all-incident-radar",
+        text: "⏱️ *Status Check for @Nithish* (System Designer): 50% SLA elapsed for memory leak & worker pool architecture investigation.",
+      },
+      {
+        reminder_id: 3,
+        assignment_id: "asgn_demo_escalate",
+        kind: "ack_escalate",
+        recipient_slack_id: "U01ROHITHADMIN",
+        recipient_name: "Rohith D",
+        role: "Admin",
+        channel: "#all-incident-radar",
+        text: "🚨 *Escalation to Admin @Rohith D*: Unacknowledged High severity incident in payment pipeline. Reassign or override?",
       },
     ];
 
