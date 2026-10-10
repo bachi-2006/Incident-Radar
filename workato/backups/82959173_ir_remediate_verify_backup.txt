@@ -1,0 +1,242 @@
+Recipe retrieved successfully
+
+### Recipe: ir-remediate-verify (ID: 82959173)
+
+**Recipe URL**: https://app.workato.com/recipes/82959173
+
+**Description**: Callable recipe function invoked by ir-orchestrator (ACT path) and ir-resume (approved path). Executes primary/fallback remediation actions via the Incident Radar API, runs a bounded verification loop (max 20 iterations, ~2s wait per pending verdict), finalizes the run, and posts verbatim slack_text to Slack. Never blind-retries modifying calls. Never claims recovery for failed/blocked/dry-run outcomes.
+
+**Folder ID**: 35715801
+
+**Project ID**: 18200516
+
+**Running**: True
+
+#### Connections
+
+| Application | Account ID |
+| --- | --- |
+| workato_recipe_function | None |
+| workato_variable | None |
+| rest | 22283611 |
+| clock | None |
+| slack | 22283619 |
+
+
+
+#### Code (Python representation)
+```python
+def recipe():
+	# step: 1
+	for execute_1 in workato_recipe_function.execute(
+		parameters_schema_json="[{\"name\": \"run_id\", \"type\": \"string\", \"optional\": false, \"control_type\": \"text\", \"label\": \"Run ID\", \"hint\": \"Stable identifier for the orchestration run\"}, {\"name\": \"fallback_action\", \"type\": \"string\", \"optional\": true, \"control_type\": \"text\", \"label\": \"Fallback Action\", \"hint\": \"Fallback action identifier from triage assessment\"}]",
+		result_schema_json="[{\"name\": \"run_id\", \"type\": \"string\", \"optional\": false, \"control_type\": \"text\"}, {\"name\": \"outcome\", \"type\": \"string\", \"optional\": true, \"control_type\": \"text\"}, {\"name\": \"slack_posted\", \"type\": \"boolean\", \"optional\": true, \"control_type\": \"checkbox\"}, {\"name\": \"verdict\", \"type\": \"string\", \"optional\": true, \"control_type\": \"text\"}, {\"name\": \"fallback_executed\", \"type\": \"boolean\", \"optional\": true, \"control_type\": \"checkbox\"}]",
+	):  # "Recipe function by Workato"::"New call for function"
+		# step: 2
+		# Declare run-scope variables: control flags + captured verdict/outcome/slack_text
+		declare_variable_2 = workato_variable.declare_variable(
+			name="primary_success",
+			type="boolean",
+			value="false",
+		)  # "Variables by Workato"::"  Create variable"
+		# step: 3
+		declare_variable_3 = workato_variable.declare_variable(
+			name="fallback_success",
+			type="boolean",
+			value="false",
+		)  # "Variables by Workato"::"  Create variable"
+		# step: 4
+		declare_variable_4 = workato_variable.declare_variable(
+			name="fallback_executed",
+			type="boolean",
+			value="false",
+		)  # "Variables by Workato"::"  Create variable"
+		# step: 5
+		declare_variable_5 = workato_variable.declare_variable(
+			name="verdict",
+			type="string",
+			value="pending",
+		)  # "Variables by Workato"::"  Create variable"
+		# step: 6
+		declare_variable_6 = workato_variable.declare_variable(
+			name="outcome",
+			type="string",
+			value="",
+		)  # "Variables by Workato"::"  Create variable"
+		# step: 7
+		declare_variable_7 = workato_variable.declare_variable(
+			name="slack_text",
+			type="string",
+			value="",
+		)  # "Variables by Workato"::"  Create variable"
+		# step: 8
+		declare_variable_8 = workato_variable.declare_variable(
+			name="slack_posted",
+			type="boolean",
+			value="false",
+		)  # "Variables by Workato"::"  Create variable"
+		# step: 9
+		# Primary remediation action — never blind-retry on failure
+		for monitor_9 in WorkatoMonitor(retries=0, sleep=2):
+			try:
+				# step: 10
+				# POST /api/actions/execute — primary role. Body {run_id, role:'primary'}. X-IR-Secret from account property. No retries on modifying call.
+				# mask_data=True
+				make_request_v2_10 = rest.make_request_v2(
+					request={"method": "POST","url": "/api/actions/execute","content_type": "application/json","headers": [{"header": "X-IR-Secret","value": "83ea2f004e0a8204c943192a99b1116e252b3360dadb7d337f4282a0d530741d"}],"body": f"{{\"run_id\": \"{execute_1['parameters']['run_id']}\", \"role\": \"primary\"}}"},
+					response={"output_type": "json"},
+				)  # "HTTP"::"Send request"
+				# step: 11
+				# Mark primary_success = true after successful primary call
+				update_variables_11 = workato_variable.update_variables(
+					name="854c8739-f0e1-40a1-b509-e321a9db6735:declare_variable_854c",
+					primary_success="true",
+				)  # "Variables by Workato"::"Update variables"
+			# step: 12
+			except WorkatoError as catch_12:
+				if monitor_9.retry:
+					continue
+				# step: 13
+				# Rescue: log step_key='primary' + error to POST /api/agent/events (bounded retries configured on this logging call)
+				# mask_data=True
+				make_request_v2_13 = rest.make_request_v2(
+					request={"method": "POST","url": "/api/agent/events","content_type": "application/json","headers": [{"header": "X-IR-Secret","value": "83ea2f004e0a8204c943192a99b1116e252b3360dadb7d337f4282a0d530741d"}],"body": f"{{\"run_id\": \"{execute_1['parameters']['run_id']}\", \"step_key\": \"primary_failed\"}}"},
+					response={"output_type": "json"},
+				)  # "HTTP"::"Send request"
+		# step: 14
+		# Run verification only when primary succeeded
+		if f"{make_request_v2_10['status_code']}" == "200":
+			# step: 15
+			# Bounded verification poll — exits when verdict != 'pending' or iteration >= 20
+			while True:
+				# step: 16
+				# POST /api/verify — poll verification; capture verdict
+				# mask_data=True
+				make_request_v2_16 = rest.make_request_v2(
+					request={"method": "POST","url": "/api/verify","content_type": "application/json","headers": [{"header": "X-IR-Secret","value": "83ea2f004e0a8204c943192a99b1116e252b3360dadb7d337f4282a0d530741d"}],"body": f"{{\"run_id\": \"{execute_1['parameters']['run_id']}\"}}"},
+					response={"output_type": "json","response_schema": "[{\"name\": \"verdict\", \"type\": \"string\"}, {\"name\": \"healthy\", \"type\": \"boolean\"}]"},
+				)  # "HTTP"::"Send request"
+				# step: 17
+				# Capture verdict from /api/verify response (bind datapill to response body)
+				update_variables_17 = workato_variable.update_variables(
+					name="755de4f2-e3fc-447e-9861-e8545efb1443:declare_variable_755d",
+					verdict=f"{make_request_v2_16['response']['verdict']}",
+				)  # "Variables by Workato"::"Update variables"
+				# step: 18
+				# Wait ~2s only when verdict is 'pending' before next poll
+				if f"{make_request_v2_16['response']['verdict']}" == "pending":
+					# step: 19
+					# Sleep ~2 seconds between pending polls
+					wait_for_interval_19 = clock.wait_for_interval(
+						interval="2",
+					)  # "Scheduler by Workato"::"Wait for time duration"
+				# step: 20
+				if not (f"{make_request_v2_16['response']['verdict']}" == "pending"):
+					break
+		# step: 21
+		# Fallback path: primary failed OR verification returned not_recovered
+		if f"{make_request_v2_16['response']['verdict']}" == "not_recovered" or f"{make_request_v2_10['status_code']}" != "200":
+			# step: 22
+			# Only run fallback when fallback_action was provided
+			if f"{execute_1['parameters']['fallback_action']}":
+				# step: 23
+				# Fallback remediation — exactly one attempt, no blind retries
+				for monitor_23 in WorkatoMonitor(retries=0, sleep=2):
+					try:
+						# step: 24
+						# POST /api/actions/execute — fallback role. Body {run_id, role:'fallback'}.
+						# mask_data=True
+						make_request_v2_24 = rest.make_request_v2(
+							request={"method": "POST","url": "/api/actions/execute","content_type": "application/json","headers": [{"header": "X-IR-Secret","value": "83ea2f004e0a8204c943192a99b1116e252b3360dadb7d337f4282a0d530741d"}],"body": f"{{\"run_id\": \"{execute_1['parameters']['run_id']}\", \"role\": \"fallback\"}}"},
+							response={"output_type": "json"},
+						)  # "HTTP"::"Send request"
+						# step: 25
+						# Mark fallback_success=true and fallback_executed=true
+						update_variables_25 = workato_variable.update_variables(
+							name="20ed2651-07dc-4a79-9af2-cc82befb58bd:declare_variable_20ed\n913a80c1-5f48-4d33-a2bb-9bcf65ff1aae:declare_variable_913a",
+							fallback_success="true",
+							fallback_executed="true",
+						)  # "Variables by Workato"::"Update variables"
+					# step: 26
+					except WorkatoError as catch_26:
+						if monitor_23.retry:
+							continue
+						# step: 27
+						# Rescue: log step_key='fallback' + error to POST /api/agent/events
+						# mask_data=True
+						make_request_v2_27 = rest.make_request_v2(
+							request={"method": "POST","url": "/api/agent/events","content_type": "application/json","headers": [{"header": "X-IR-Secret","value": "83ea2f004e0a8204c943192a99b1116e252b3360dadb7d337f4282a0d530741d"}],"body": f"{{\"run_id\": \"{execute_1['parameters']['run_id']}\", \"step_key\": \"fallback_failed\"}}"},
+							response={"output_type": "json"},
+						)  # "HTTP"::"Send request"
+				# step: 28
+				# If fallback succeeded, re-run bounded verification loop
+				if f"{declare_variable_3['value']}" == True:
+					# step: 29
+					# Reset verdict before second verification loop
+					update_variables_29 = workato_variable.update_variables(
+						name="755de4f2-e3fc-447e-9861-e8545efb1443:declare_variable_755d",
+						verdict="pending",
+					)  # "Variables by Workato"::"Update variables"
+					# step: 30
+					# Bounded post-fallback verification poll — max 20, 2s on pending
+					while True:
+						# step: 31
+						# POST /api/verify — post-fallback poll
+						# mask_data=True
+						make_request_v2_31 = rest.make_request_v2(
+							request={"method": "POST","url": "/api/verify","content_type": "application/json","headers": [{"header": "X-IR-Secret","value": "83ea2f004e0a8204c943192a99b1116e252b3360dadb7d337f4282a0d530741d"}],"body": f"{{\"run_id\": \"{execute_1['parameters']['run_id']}\"}}"},
+							response={"output_type": "json","response_schema": "[{\"name\": \"verdict\", \"type\": \"string\"}, {\"name\": \"healthy\", \"type\": \"boolean\"}]"},
+						)  # "HTTP"::"Send request"
+						# step: 32
+						# Capture verdict from /api/verify response
+						update_variables_32 = workato_variable.update_variables(
+							name="755de4f2-e3fc-447e-9861-e8545efb1443:declare_variable_755d",
+							verdict=f"{make_request_v2_31['response']['verdict']}",
+						)  # "Variables by Workato"::"Update variables"
+						# step: 33
+						# Wait ~2s only when verdict is 'pending'
+						if f"{declare_variable_5['value']}" == "pending":
+							# step: 34
+							# Sleep ~2s between pending polls
+							wait_for_interval_34 = clock.wait_for_interval(
+								interval="2",
+							)  # "Scheduler by Workato"::"Wait for time duration"
+						# step: 35
+						if not (f"{declare_variable_5['value']}" == "pending" and f"{job_context['repeat_count']}" < "20"):
+							break
+		# step: 36
+		# POST /api/runs/:run_id/finalize — capture outcome + slack_text
+		# mask_data=True
+		make_request_v2_36 = rest.make_request_v2(
+			request={"method": "POST","url": f"/api/runs/{execute_1['parameters']['run_id']}/finalize","headers": [{"header": "X-IR-Secret","value": "83ea2f004e0a8204c943192a99b1116e252b3360dadb7d337f4282a0d530741d"}]},
+			response={"output_type": "json","response_schema": "[{\"name\": \"outcome\", \"type\": \"string\"}, {\"name\": \"slack_text\", \"type\": \"string\"}]"},
+		)  # "HTTP"::"Send request"
+		# step: 37
+		# Capture outcome + slack_text from finalize response
+		update_variables_37 = workato_variable.update_variables(
+			name="e7851e63-71ca-42e3-853e-bd9ba668401c:declare_variable_e785\ned8d0d05-5af2-44d4-bc6e-858e6eb65413:declare_variable_ed8d",
+			outcome=f"{make_request_v2_36['response']['outcome']}",
+			slack_text=f"{make_request_v2_36['response']['slack_text']}",
+		)  # "Variables by Workato"::"Update variables"
+		# step: 38
+		# Post slack_text only when non-empty (verbatim — never modified)
+		if f"{make_request_v2_36['response']['slack_text']}":
+			# step: 39
+			# Post slack_text verbatim — do NOT alter the text
+			post_message_to_channel_39 = slack.post_message_to_channel(
+				channel="C0C88MA3JAE",
+				text=f"{make_request_v2_36['response']['slack_text']}",
+			)  # "Slack"::"Post message"
+			# step: 40
+			# Record slack_posted=true
+			update_variables_40 = workato_variable.update_variables(
+				name="3ee6a6f2-be68-41ba-b6a5-a90e7cfa004b:declare_variable_3ee6",
+				slack_posted="true",
+			)  # "Variables by Workato"::"Update variables"
+		# step: 41
+		# Return run_id, outcome, verdict, slack_posted, fallback_executed to caller
+		return_result_41 = workato_recipe_function.return_result(
+			result={"run_id": f"{execute_1['parameters']['run_id']}","outcome": f"{declare_variable_6['value']}","verdict": f"{declare_variable_5['value']}","slack_posted": f"{declare_variable_8['value']}","fallback_executed": f"{declare_variable_4['value']}"},
+		)  # "Recipe function by Workato"::"Return data from a recipe function"
+```
+

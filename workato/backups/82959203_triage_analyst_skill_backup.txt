@@ -1,0 +1,47 @@
+Recipe retrieved successfully
+
+### Recipe: Triage Analyst Skill (ID: 82959203)
+
+**Recipe URL**: https://app.workato.com/recipes/82959203
+
+**Description**: Skill wrapping the Triage Analyst Genie (gin-AbsmKTXo-wH6Er3-CD), making it callable from Workato recipes as a synchronous skill. Accepts incident evidence array and permitted_actions array. Returns the Genie's full structured triage assessment (9 required output fields). Consumed by ir-orchestrator.
+
+**Folder ID**: 35715801
+
+**Project ID**: 18200516
+
+**Running**: True
+
+#### Connections
+
+| Application | Account ID |
+| --- | --- |
+| workato_skill | None |
+| workato_genie | None |
+
+
+
+#### Code (Python representation)
+```python
+def recipe():
+	# step: 1
+	for start_workflow_1 in workato_skill.start_workflow(
+		description="Analyzes incident evidence and returns a structured triage assessment including likely cause, supporting and contradicting evidence IDs, recommended and fallback actions, and a \u226480-word reasoning summary. Pass the full evidence array and the permitted action catalogue.",
+		requires_user_confirmation="false",
+		parameters_schema_json="[{\"name\": \"evidence\", \"type\": \"array\", \"of\": \"object\", \"optional\": false, \"hint\": \"Array of incident evidence objects to analyze\", \"properties\": [{\"name\": \"evidence_id\", \"type\": \"string\", \"optional\": true, \"control_type\": \"text\"}]}, {\"name\": \"permitted_actions\", \"type\": \"array\", \"of\": \"string\", \"optional\": false, \"hint\": \"Pre-authorized action identifiers for this run\", \"control_type\": \"text\"}]",
+		result_schema_json="[{\"name\": \"assessment_status\", \"type\": \"string\", \"optional\": false, \"control_type\": \"text\", \"hint\": \"One of: supported, uncertain, contradictory, insufficient_data\"}, {\"name\": \"candidate_cause\", \"type\": \"string\", \"optional\": false, \"control_type\": \"text\", \"hint\": \"Most likely root cause\"}, {\"name\": \"evidence_for\", \"type\": \"array\", \"of\": \"string\", \"optional\": false, \"control_type\": \"text\", \"hint\": \"Evidence IDs supporting the cause\"}, {\"name\": \"evidence_against\", \"type\": \"array\", \"of\": \"string\", \"optional\": false, \"control_type\": \"text\", \"hint\": \"Evidence IDs contradicting the cause\"}, {\"name\": \"missing_evidence\", \"type\": \"array\", \"of\": \"string\", \"optional\": false, \"control_type\": \"text\", \"hint\": \"Descriptions of evidence needed but absent\"}, {\"name\": \"recommended_action\", \"type\": \"string\", \"optional\": false, \"control_type\": \"text\", \"hint\": \"One of: rollback_latest_deploy, disable_demo_feature_flag, restart_demo_service\"}, {\"name\": \"fallback_action\", \"type\": \"string\", \"optional\": false, \"control_type\": \"text\", \"hint\": \"One of: rollback_latest_deploy, disable_demo_feature_flag, restart_demo_service\"}, {\"name\": \"reasoning_summary\", \"type\": \"string\", \"optional\": false, \"control_type\": \"text\", \"hint\": \"Max 80 words\"}, {\"name\": \"limitations\", \"type\": \"string\", \"optional\": false, \"control_type\": \"text\", \"hint\": \"Uncertainty and limitations\"}]",
+	):  # "Workato Skill"::"Start workflow"
+		# step: 2
+		# Invoke Triage Analyst Genie
+		assign_task_to_genie_2 = workato_genie.assign_task_to_genie(
+			genie_handle="gin-AbsmKTXo-wH6Er3-CD",
+			task_instructions=f"Analyze the following incident evidence and produce a structured triage assessment.\n\nEvidence:\n{start_workflow_1['parameters']['evidence']}\n\nPermitted actions (choose recommended_action and fallback_action only from this list):\n{start_workflow_1['parameters']['permitted_actions']}\n\nReturn all 9 fields in the structured output: assessment_status (supported|uncertain|contradictory|insufficient_data), candidate_cause, evidence_for (array of evidence IDs), evidence_against (array of evidence IDs), missing_evidence (array), recommended_action, fallback_action, reasoning_summary (<=80 words), limitations.",
+			structured_output="[{\"control_type\": \"text\", \"name\": \"assessment_status\", \"optional\": false, \"type\": \"string\"}, {\"control_type\": \"text\", \"name\": \"candidate_cause\", \"optional\": false, \"type\": \"string\"}, {\"control_type\": \"text\", \"name\": \"evidence_for\", \"of\": \"string\", \"optional\": false, \"type\": \"array\"}, {\"control_type\": \"text\", \"name\": \"evidence_against\", \"of\": \"string\", \"optional\": false, \"type\": \"array\"}, {\"control_type\": \"text\", \"name\": \"missing_evidence\", \"of\": \"string\", \"optional\": false, \"type\": \"array\"}, {\"control_type\": \"text\", \"name\": \"recommended_action\", \"optional\": false, \"type\": \"string\"}, {\"control_type\": \"text\", \"name\": \"fallback_action\", \"optional\": false, \"type\": \"string\"}, {\"control_type\": \"text\", \"name\": \"reasoning_summary\", \"optional\": false, \"type\": \"string\"}, {\"control_type\": \"text\", \"name\": \"limitations\", \"optional\": false, \"type\": \"string\"}]",
+		)  # "Workato Genie"::"Assign task to genie"
+		# step: 3
+		# Return triage assessment to caller
+		workflow_return_result_3 = workato_skill.workflow_return_result(
+			result={"assessment_status": f"{assign_task_to_genie_2['structured_output']['assessment_status']}","candidate_cause": f"{assign_task_to_genie_2['structured_output']['candidate_cause']}","evidence_for": f"{assign_task_to_genie_2['structured_output']['evidence_for']}","evidence_against": f"{assign_task_to_genie_2['structured_output']['evidence_against']}","missing_evidence": f"{assign_task_to_genie_2['structured_output']['missing_evidence']}","recommended_action": f"{assign_task_to_genie_2['structured_output']['recommended_action']}","fallback_action": f"{assign_task_to_genie_2['structured_output']['fallback_action']}","reasoning_summary": f"{assign_task_to_genie_2['structured_output']['reasoning_summary']}","limitations": f"{assign_task_to_genie_2['structured_output']['limitations']}"},
+		)  # "Workato Skill"::"Return response"
+```
+

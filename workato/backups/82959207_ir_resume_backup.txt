@@ -1,0 +1,92 @@
+Recipe retrieved successfully
+
+### Recipe: ir-resume (ID: 82959207)
+
+**Recipe URL**: https://app.workato.com/recipes/82959207
+
+**Description**: Webhook-triggered recipe handling human approval callbacks from the Incident Radar application. Validates X-IR-Secret, logs receipt, branches on approved/rejected/expired: calls ir-remediate-verify on approval; finalizes and posts verbatim slack_text on rejection or expiry. Idempotent duplicate handling via step_key logging.
+
+**Folder ID**: 35715801
+
+**Project ID**: 18200516
+
+**Running**: True
+
+#### Connections
+
+| Application | Account ID |
+| --- | --- |
+| workato_webhooks | None |
+| rest | 22283611 |
+| workato_recipe_function | None |
+| slack | 22283619 |
+
+
+
+#### Code (Python representation)
+```python
+def recipe():
+	# step: 1
+	for new_event_1 in workato_webhooks.new_event(
+		request={"webhook_type": "json","payload_schema": "[{\"name\": \"run_id\", \"type\": \"string\"}, {\"name\": \"approval_id\", \"type\": \"string\"}, {\"name\": \"decision\", \"type\": \"string\"}]","headers_schema": "[{\"name\": \"X-IR-Secret\", \"type\": \"string\"}]"},
+		webhook_suffix="ir-resume",
+	):  # "Webhooks"::"New event via webhook"
+		# step: 2
+		# Error handler — catch any failure and POST to /api/agent/events
+		for monitor_2 in WorkatoMonitor(retries=0, sleep=2):
+			try:
+				# step: 3
+				# Auth check — reject if X-IR-Secret header does not match account property
+				if f"{new_event_1['headers']['x_ir_secret']}" != "83ea2f004e0a8204c943192a99b1116e252b3360dadb7d337f4282a0d530741d":
+					# step: 4
+					# Stop recipe — unauthorized webhook caller
+					return {
+						"stop_reason": "Unauthorized: X-IR-Secret mismatch (HTTP 401)",
+						"stop_with_error": "false"
+					}
+				# step: 5
+				# Log receipt event (idempotency anchor) — POST /api/agent/events with step_key=resume_received
+				make_request_v2_5 = rest.make_request_v2(
+					request_name="Log receipt event",
+					request={"method": "POST","url": "/api/agent/events","content_type": "application/json","body": f"{{\"run_id\": \"{new_event_1['payload']['run_id']}\", \"approval_id\": \"{new_event_1['payload']['approval_id']}\", \"step_key\": \"resume_received\"}}","headers": [{"header": "X-IR-Secret","value": "83ea2f004e0a8204c943192a99b1116e252b3360dadb7d337f4282a0d530741d"}]},
+					response={"output_type": "json"},
+				)  # "HTTP"::"Send request"
+				# step: 6
+				# If approved — call ir-remediate-verify Recipe Function
+				if f"{new_event_1['payload']['decision']}" == "approved":
+					# step: 7
+					# Trigger ir-remediate-verify Recipe Function with run_id
+					call_recipe_7 = workato_recipe_function.call_recipe(
+						flow_id="82959173",
+						parameters={"run_id": f"{new_event_1['payload']['run_id']}"},
+					)  # "Recipe function by Workato"::"Call a recipe function (synchronous)"
+				
+				# step: 8
+				# Else — decision is rejected or expired
+				else:
+					# step: 9
+					# Finalize run — POST /api/runs/{run_id}/finalize
+					make_request_v2_9 = rest.make_request_v2(
+						request_name="Finalize run",
+						request={"method": "POST","url": f"/api/runs/{new_event_1['payload']['run_id']}/finalize","headers": [{"header": "X-IR-Secret","value": "83ea2f004e0a8204c943192a99b1116e252b3360dadb7d337f4282a0d530741d"}]},
+						response={"output_type": "json","response_schema": "[{\"name\": \"slack_text\", \"type\": \"string\"}, {\"name\": \"slack_channel\", \"type\": \"string\"}]"},
+					)  # "HTTP"::"Send request"
+					# step: 10
+					# Post verbatim slack_text from finalize response — no modification
+					post_message_to_channel_10 = slack.post_message_to_channel(
+						channel=f"{make_request_v2_9['response']['slack_channel']}",
+						text=f"{make_request_v2_9['response']['slack_text']}",
+					)  # "Slack"::"Post message"
+			# step: 11
+			except WorkatoError as catch_11:
+				if monitor_2.retry:
+					continue
+				# step: 12
+				# Log failure to /api/agent/events with error details
+				make_request_v2_12 = rest.make_request_v2(
+					request_name="Log failure event",
+					request={"method": "POST","url": "/api/agent/events","content_type": "application/json","headers": [{"header": "X-IR-Secret","value": "83ea2f004e0a8204c943192a99b1116e252b3360dadb7d337f4282a0d530741d"}],"body": f"{{\"run_id\": \"{new_event_1['payload']['run_id']}\", \"approval_id\": \"{new_event_1['payload']['approval_id']}\", \"step_key\": \"resume_error\", \"error_step\": {catch_11['line_number']}, \"error_type\": \"{catch_11['type']}\", \"error_message\": \"{catch_11['message']}\"}}"},
+					response={"output_type": "json"},
+				)  # "HTTP"::"Send request"
+```
+

@@ -1,0 +1,134 @@
+Recipe retrieved successfully
+
+### Recipe: ir-orchestrator (ID: 82959206)
+
+**Recipe URL**: https://app.workato.com/recipes/82959206
+
+**Description**: Webhook-triggered main orchestrator recipe. Validates X-IR-Secret and required fields, logs workflow start, invokes the Triage Analyst Skill, sends structured output to the policy decision API, and branches on ACT/ASK/NOTIFY. On ACT calls ir-remediate-verify. On ASK/NOTIFY posts verbatim slack_text to Slack. Bounded retries (max 3) on non-modifying calls only.
+
+**Folder ID**: 35715801
+
+**Project ID**: 18200516
+
+**Running**: True
+
+#### Connections
+
+| Application | Account ID |
+| --- | --- |
+| workato_webhooks | None |
+| rest | 22283611 |
+| logger | None |
+| workato_genie | None |
+| workato_recipe_function | None |
+| slack | 22283619 |
+
+
+
+#### Code (Python representation)
+```python
+def recipe():
+	# step: 1
+	for new_event_1 in workato_webhooks.new_event(
+		request={"webhook_type": "json","headers_schema": "[{\"name\": \"X-IR-Secret\", \"type\": \"string\", \"optional\": false, \"control_type\": \"text\"}]","payload_schema": "[{\"name\": \"run_id\", \"type\": \"string\", \"optional\": false, \"control_type\": \"text\"}, {\"name\": \"incident_id\", \"type\": \"string\", \"optional\": false, \"control_type\": \"text\"}, {\"name\": \"evidence\", \"type\": \"array\", \"of\": \"object\", \"optional\": false, \"properties\": [{\"name\": \"item\", \"type\": \"string\", \"optional\": true, \"control_type\": \"text\"}]}, {\"name\": \"permitted_actions\", \"type\": \"array\", \"of\": \"string\", \"optional\": false, \"list_mode\": \"static\", \"control_type\": \"text\"}]"},
+		webhook_suffix="ir-orchestrator",
+	):  # "Webhooks"::"New event via webhook"
+		# step: 2
+		# Verify X-IR-Secret header matches account property; stop if invalid (webhook triggers cannot return custom HTTP status codes)
+		# mask_data=True
+		if f"{new_event_1['headers']['x_ir_secret']}" != "83ea2f004e0a8204c943192a99b1116e252b3360dadb7d337f4282a0d530741d":
+			# step: 3
+			# Reject unauthorized webhook — webhook triggers return 200 automatically; 401 cannot be returned
+			return {
+				"stop_reason": "Unauthorized: X-IR-Secret header mismatch",
+				"stop_with_error": "true"
+			}
+		# step: 4
+		# Validate required payload fields (run_id, incident_id, evidence, permitted_actions)
+		if not f"{new_event_1['payload']['run_id']}" or not f"{new_event_1['payload']['incident_id']}" or not f"{new_event_1['payload']['evidence']}" or not f"{new_event_1['payload']['permitted_actions']}":
+			# step: 5
+			# Reject malformed webhook payload
+			return {
+				"stop_reason": "Bad Request: missing required fields (run_id, incident_id, evidence, permitted_actions)",
+				"stop_with_error": "true"
+			}
+		# step: 6
+		# Log orchestrator_start event (retriable up to 3 times)
+		for monitor_6 in WorkatoMonitor(retries=3, sleep=5):
+			try:
+				# step: 7
+				# POST /api/agent/events with step_key=orchestrator_start (connection pending)
+				make_request_v2_7 = rest.make_request_v2(
+					request={"method": "POST","url": "/api/agent/events","content_type": "application/json","headers": [{"header": "X-IR-Secret","value": "83ea2f004e0a8204c943192a99b1116e252b3360dadb7d337f4282a0d530741d"}],"body": f"{{\"run_id\": \"{new_event_1['payload']['run_id']}\", \"incident_id\": \"{new_event_1['payload']['incident_id']}\", \"step_key\": \"orchestrator_start\"}}"},
+					response={"output_type": "json"},
+				)  # "HTTP"::"Send request"
+			# step: 8
+			except WorkatoError as catch_8:
+				if monitor_6.retry:
+					continue
+				# step: 9
+				# Log retry exhaustion for orchestrator_start (non-fatal)
+				log_message_9 = logger.log_message(
+					message="orchestrator_start logging failed after retries",
+				)  # "Logger by Workato"::"Log message"
+		# step: 10
+		# Invoke Triage Analyst Skill (skl-AbsmPphJ-hLHRfC-CD) with evidence + permitted_actions
+		assign_task_to_genie_10 = workato_genie.assign_task_to_genie(
+			genie_handle="gin-AbsmKTXo-wH6Er3-CD",
+			task_instructions=f"Analyze the incident evidence and produce a structured triage assessment.\nEvidence: {new_event_1['payload']['evidence']}\nPermitted actions: {new_event_1['payload']['permitted_actions']}",
+			structured_output="[{\"control_type\": \"text\", \"name\": \"assessment_status\", \"optional\": false, \"type\": \"string\"}, {\"control_type\": \"text\", \"name\": \"candidate_cause\", \"optional\": false, \"type\": \"string\"}, {\"control_type\": \"text\", \"name\": \"evidence_for\", \"of\": \"string\", \"optional\": false, \"type\": \"array\"}, {\"control_type\": \"text\", \"name\": \"evidence_against\", \"of\": \"string\", \"optional\": false, \"type\": \"array\"}, {\"control_type\": \"text\", \"name\": \"missing_evidence\", \"of\": \"string\", \"optional\": false, \"type\": \"array\"}, {\"control_type\": \"text\", \"name\": \"recommended_action\", \"optional\": false, \"type\": \"string\"}, {\"control_type\": \"text\", \"name\": \"fallback_action\", \"optional\": false, \"type\": \"string\"}, {\"control_type\": \"text\", \"name\": \"reasoning_summary\", \"optional\": false, \"type\": \"string\"}, {\"control_type\": \"text\", \"name\": \"limitations\", \"optional\": false, \"type\": \"string\"}]",
+		)  # "Workato Genie"::"Assign task to genie"
+		# step: 11
+		# POST /api/policy/decide (connection pending)
+		make_request_v2_11 = rest.make_request_v2(
+			request={"method": "POST","url": "/api/policy/decide","content_type": "application/json","headers": [{"header": "X-IR-Secret","value": "83ea2f004e0a8204c943192a99b1116e252b3360dadb7d337f4282a0d530741d"}]},
+			response={"output_type": "json","response_schema": "[{\"name\": \"decision\", \"type\": \"string\"}, {\"name\": \"slack_text\", \"type\": \"string\"}, {\"name\": \"rule_id\", \"type\": \"string\"}]"},
+		)  # "HTTP"::"Send request"
+		# step: 12
+		# Branch on policy decision (ACT / ASK / NOTIFY)
+		if f"{make_request_v2_11['response']['decision']}" == "ACT":
+			# step: 13
+			# ACT: invoke ir-remediate-verify recipe function
+			call_recipe_13 = workato_recipe_function.call_recipe(
+				flow_id="82959173",
+				parameters={"run_id": f"{new_event_1['payload']['run_id']}","fallback_action": f"{assign_task_to_genie_10['structured_output']['fallback_action']}"},
+			)  # "Recipe function by Workato"::"Call a recipe function (synchronous)"
+		# step: 14
+		# ASK: await approval; send Slack text + log awaiting_approval
+		elif f"{make_request_v2_11['response']['decision']}" == "ASK":
+			# step: 15
+			# Post policy slack_text verbatim (ASK branch) — connection pending
+			post_message_to_channel_15 = slack.post_message_to_channel(
+				channel="C0C88MA3JAE",
+				text=f"{make_request_v2_11['response']['slack_text']}",
+			)  # "Slack"::"Post message"
+			# step: 16
+			# POST /api/agent/events with step_key=awaiting_approval
+			make_request_v2_16 = rest.make_request_v2(
+				request={"method": "POST","url": "/api/agent/events","content_type": "application/json","headers": [{"header": "X-IR-Secret","value": "83ea2f004e0a8204c943192a99b1116e252b3360dadb7d337f4282a0d530741d"}],"body": f"{{\"run_id\": \"{new_event_1['payload']['run_id']}\", \"incident_id\": \"{new_event_1['payload']['incident_id']}\", \"step_key\": \"awaiting_approval\"}}"},
+				response={"output_type": "json"},
+			)  # "HTTP"::"Send request"
+		
+		# step: 17
+		# NOTIFY: Slack post + finalize + log notified
+		elif f"{make_request_v2_11['response']['decision']}" == "NOTIFY":
+			# step: 18
+			# Post policy slack_text verbatim (NOTIFY branch) — connection pending
+			post_message_to_channel_18 = slack.post_message_to_channel(
+				channel="C0C88MA3JAE",
+				text=f"{make_request_v2_11['response']['slack_text']}",
+			)  # "Slack"::"Post message"
+			# step: 19
+			# POST /api/runs/:run_id/finalize
+			make_request_v2_19 = rest.make_request_v2(
+				request={"method": "POST","url": f"/api/runs/{new_event_1['payload']['run_id']}/finalize","headers": [{"header": "X-IR-Secret","value": "83ea2f004e0a8204c943192a99b1116e252b3360dadb7d337f4282a0d530741d"}]},
+				response={"output_type": "json"},
+			)  # "HTTP"::"Send request"
+			# step: 20
+			# POST /api/agent/events with step_key=notified
+			make_request_v2_20 = rest.make_request_v2(
+				request={"method": "POST","url": "/api/agent/events","content_type": "application/json","headers": [{"header": "X-IR-Secret","value": "83ea2f004e0a8204c943192a99b1116e252b3360dadb7d337f4282a0d530741d"}],"body": f"{{\"run_id\": \"{new_event_1['payload']['run_id']}\", \"incident_id\": \"{new_event_1['payload']['incident_id']}\", \"step_key\": \"notified\"}}"},
+				response={"output_type": "json"},
+			)  # "HTTP"::"Send request"
+```
+
