@@ -92,25 +92,77 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    const incident_id = body.incident_id || run_id;
+    const category = (body.category || "frontend").trim().toLowerCase().replace(/\s+/g, "_");
+    const categoryConfidence = Number(body.category_confidence) || 0.92;
+    const deadline = body.deadline || new Date(Date.now() + 30 * 60 * 1000).toISOString();
+    const formattedDeadline = new Date(deadline).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", dateStyle: "medium", timeStyle: "short" });
+
+    let targetService = "payment-gateway-service";
+    if (category === "frontend") targetService = "checkout-frontend";
+    else if (category === "database") targetService = "postgres-primary";
+    else if (category === "system_architecture") targetService = "auth-gateway-service";
+    else if (category === "devops") targetService = "payment-api-canary";
+
     if (assessment_status === "supported" && isAllowedAction) {
       decision = "ACT";
       rule_id = "R6_HIGH_EVIDENCE_REVERSIBLE";
       reason = "High confidence causal link backed by chronological telemetry; authorized catalogue action.";
-      slack_text = `🚨 *Incident Radar — Autonomous Remediation*\n<@${assignedSlackId}> (${assignedHandle} - ${assignedRole}): Assessment supported (${candidate_cause}). Auto-remediating with action: \`${recommended_action}\`.`;
     } else if (assessment_status === "uncertain" || assessment_status === "insufficient_data") {
       decision = "ASK";
       rule_id = "R4_LOW_EVIDENCE_REVIEW";
       reason = "Telemetry signals inconclusive or conflicting. Requires human-in-the-loop sign-off.";
       requiredRole = body.affected_services?.length >= 2 ? "maintainer" : "responder";
       approvalToken = generateApprovalToken(run_id);
-      const approveUrl = `${baseUrl}/approve/${run_id}?t=${approvalToken}`;
-      slack_text = `⚠️ *Incident Radar — Approval Required*\n<@${assignedSlackId}> (${assignedHandle} - ${assignedRole}): Triage uncertain (${candidate_cause}). Proposed fix \`${recommended_action}\` requires approval:\n👉 *Approval URL*: ${approveUrl}`;
     } else {
       decision = "NOTIFY";
       rule_id = "R7_ACTION_CONTEXT_MISMATCH";
       reason = "Contradictory evidence or unsupported action. Escalating to on-call engineer.";
-      slack_text = `🛑 *Incident Radar — Alert Escalated*\nRoot cause ambiguous (${candidate_cause}).\n• *Primary Assignee*: <@${assignedSlackId}> (${assignedHandle} - ${assignedRole})\n• *Escalation Roster*: <@U01ROHITHADMIN> (@Rohith D - Admin), <@U02DACHEPALLY> (@Dachepally - Frontend), <@U03NITHISHSYS> (@Nithish gajjela - System Designer)`;
     }
+
+    const approveUrl = `${baseUrl}/approve/${run_id}?t=${approvalToken || generateApprovalToken(run_id)}`;
+    const ackLink = `${baseUrl}/a/${run_id}?action=ack&t=${approvalToken || generateApprovalToken(run_id)}`;
+
+    let slack_dm_text = "";
+    let slack_channel_summary = `🚨 *Incident ${incident_id} assigned to ${assignedHandle.replace(/^@/, "")} (${category})*, confidence ${Math.round(categoryConfidence * 100)}%. A direct message was sent to the assignee.`;
+
+    if (decision === "ACT") {
+      slack_dm_text = `🚨 *Incident assigned to you*\n\n` +
+        `*Area*: ${category} | *Confidence*: ${Math.round(categoryConfidence * 100)}%\n` +
+        `*Incident*: ${candidate_cause}\n` +
+        `*Service*: \`${targetService}\` | *Severity*: High\n\n` +
+        `*Why you were selected*:\n` +
+        `• Expertise fit: 5/5 in ${category}\n` +
+        `• Owns the ${category} category\n` +
+        `• Correlated telemetry matches component ownership\n\n` +
+        `*Recommended action*:\nAutonomous remediation via action \`${recommended_action}\`.\n\n` +
+        `*Deadline*:\n${formattedDeadline} IST\n\n` +
+        `*Open incident*: ${baseUrl}/incidents/${incident_id}\n` +
+        `*View run*: ${baseUrl}/runs/${run_id}`;
+    } else if (decision === "ASK") {
+      slack_dm_text = `🚨 *Incident assigned to you*\n\n` +
+        `*Area*: ${category} | *Confidence*: ${Math.round(categoryConfidence * 100)}%\n` +
+        `*Incident*: ${candidate_cause}\n` +
+        `*Service*: \`${targetService}\` | *Severity*: High\n\n` +
+        `*Why you were selected*:\n` +
+        `• Expertise fit: 5/5 in ${category}\n` +
+        `• Owns the ${category} category\n` +
+        `• Telemetry ambiguity requires domain expert sign-off\n\n` +
+        `*Recommended action*:\n\`${recommended_action}\` (Fallback: \`${fallback_action}\`)\n\n` +
+        `*Deadline*:\n${formattedDeadline} IST\n\n` +
+        `*Open incident*: ${baseUrl}/incidents/${incident_id}\n` +
+        `*Acknowledge / Approve*: ${approveUrl}`;
+    } else {
+      slack_dm_text = `🛑 *Incident Alert Escalated*\n\n` +
+        `*Incident*: ${candidate_cause}\n` +
+        `*Service*: \`${targetService}\`\n\n` +
+        `*Primary Assignee*: <@${assignedSlackId}> (${assignedHandle} - ${assignedRole})\n` +
+        `*Escalation Roster*: <@U01ROHITHADMIN> (@Rohith D - Admin), <@U02DACHEPALLY> (@Dachepally - Frontend), <@U03NITHISHSYS> (@Nithish gajjela - System Designer)`;
+      slack_channel_summary = `🛑 *Incident ${incident_id} Escalated* to on-call roster. Primary: ${assignedHandle}. Investigation required.`;
+    }
+
+    // Default slack_text to slack_dm_text for single-step compatibility
+    slack_text = slack_dm_text;
 
     // Persist run state in runs and audit_log
     await updateRunState(run_id, {
@@ -126,7 +178,7 @@ export async function POST(req: NextRequest) {
       actor: "workato:ir-orchestrator",
       action: "policy_evaluated",
       target: run_id,
-      detail: { decision, rule_id, recommended_action, assessment_status, assignedSlackId },
+      detail: { decision, rule_id, recommended_action, assessment_status, assignedSlackId, category, deadline },
     });
 
     // Optionally update agent_runs if present in Supabase
@@ -144,6 +196,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       run_id,
       project_id,
+      incident_id,
       decision,
       action: recommended_action,
       fallback_action,
@@ -153,10 +206,15 @@ export async function POST(req: NextRequest) {
       policy_version: "v2-policy",
       reason,
       slack_text,
-      category: body.category || "system_architecture",
+      slack_dm_text,
+      slack_channel_summary,
+      category,
+      category_confidence: categoryConfidence,
+      deadline,
       assigned_user_slack_id: assignedSlackId,
       assigned_user_name: assignedHandle.replace(/^@/, ""),
       assigned_user_role: assignedRole,
+      slack_destination_type: body.slack_destination_type || "USER_DM",
       timestamp: new Date().toISOString(),
     });
   } catch (err: any) {

@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { setActiveRun } from "@/lib/run-state";
+import crypto from "crypto";
+import { setActiveRun, recordAuditLog } from "@/lib/run-state";
 import {
   computeRuleScores,
   combineCategoryScores,
   computeCandidateFit,
   computeAssignmentConfidence,
+  calculateSlaDeadlines,
   MemberProfile,
   EvidenceContext,
 } from "../../../../../assignment-engine";
@@ -322,12 +324,14 @@ export async function POST(req: NextRequest) {
       if (body.assigned_user_name) assignedName = body.assigned_user_name;
     }
     const assignedRole = topCandidate?.role || "Responder";
+    const assignmentId = crypto.randomUUID();
+    const { ackDueAt, dueAt } = calculateSlaDeadlines("high");
+    const deadlineIso = ackDueAt.toISOString();
 
     // Persist assignment in Supabase for persistence and auditability
     if (supabaseAdmin) {
       try {
-        const assignmentId = `asgn_${timestamp}`;
-        await (supabaseAdmin as any).from("assignments").insert({
+        await (supabaseAdmin as any).from("assignments").upsert({
           id: assignmentId,
           project_id: "00000000-0000-0000-0000-000000000002",
           kind: "incident",
@@ -339,9 +343,28 @@ export async function POST(req: NextRequest) {
           candidates: candidates.slice(0, 3),
           decision: "auto",
           status: "assigned",
+          ack_due_at: deadlineIso,
+          due_at: dueAt.toISOString(),
+        });
+
+        await recordAuditLog({
+          project_id: "00000000-0000-0000-0000-000000000002",
+          actor: "assignment-engine",
+          action: "incident_assigned",
+          target: incident_id,
+          detail: {
+            assignment_id: assignmentId,
+            category: calculatedCategory,
+            confidence: topCandidate.confidence,
+            assignee_user_id: topCandidate.id,
+            assignee_slack_user_id: assignedSlackId,
+            assignee_name: assignedName,
+            assignee_role: assignedRole,
+            deadline: deadlineIso,
+          },
         });
       } catch (err: any) {
-        // Non-blocking
+        // Non-blocking fallback
       }
     }
 
@@ -359,11 +382,13 @@ export async function POST(req: NextRequest) {
         run_id,
         incident_id,
         category: calculatedCategory,
+        category_confidence: Math.round(combinedScores.confidence * 100) / 100,
         evidence,
         permitted_actions,
         assigned_user_slack_id: assignedSlackId,
         assigned_user_name: assignedName,
         assigned_user_role: assignedRole,
+        deadline: deadlineIso,
         slack_destination_type: "USER_DM",
         debug_routing_info: `Assignment engine routed category '${calculatedCategory}' (${topCandidate.confidence}% confidence) to ${assignedName} (${assignedSlackId})`,
       }),

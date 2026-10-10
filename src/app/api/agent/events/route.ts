@@ -21,15 +21,32 @@ export async function POST(req: NextRequest) {
       actor,
       action: `agent_step:${step_key || "event_logged"}`,
       target: run_id,
-      detail: { status, error },
+      detail: { status, error, ...body },
     });
+
+    if (incident_id && (body.delivery_status || step_key === "dm_delivered" || step_key === "dm_failed")) {
+      try {
+        const { supabaseAdmin } = await import("@/lib/supabase");
+        if (supabaseAdmin) {
+          const deliveryStatus = body.delivery_status || (step_key === "dm_delivered" ? "assigned" : "delivery_failed");
+          await (supabaseAdmin as any).from("assignments").update({
+            status: deliveryStatus,
+            updated_at: new Date().toISOString(),
+          }).eq("incident_id", incident_id);
+        }
+      } catch {
+        // Non-blocking
+      }
+    }
 
     console.log(`[Agent Event] Run: ${run_id} | Step: ${step_key} | Status: ${status}`, error ? `Error: ${error}` : "");
 
     return NextResponse.json({
       success: true,
       run_id,
+      incident_id,
       step_key: step_key || "event_logged",
+      delivery_status: body.delivery_status || (step_key === "dm_delivered" ? "sent" : undefined),
       logged_at: new Date().toISOString(),
     });
   } catch (err: any) {
