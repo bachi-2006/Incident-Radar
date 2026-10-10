@@ -65,8 +65,8 @@ export async function POST(
 
     const slack_text =
       outcome === "resolved"
-        ? `✅ *Incident Radar — Incident Remediated & Verified*\n• Target Service: \`${targetService}\`\n• Verification: 3 consecutive healthy telemetry samples\n• Error Rate: ${errorRate} | Latency p95: ${p95Latency}\n• Recovery Receipt: \`sha256:${receiptHash.substring(0, 16)}...\`\n• View Run: ${baseUrl}/runs/${id}`
-        : `🛑 *Incident Radar — Incident Escalated*\n• Target Service: \`${targetService}\`\n• Run ${id} could not achieve verified recovery. Escalated to on-call engineer.`;
+        ? `✅ *Incident Radar — Incident Remediated & Verified*\n• Target Service: \`${targetService}\`\n• Verification: 3 consecutive healthy telemetry samples\n• Error Rate: ${errorRate} | Latency p95: ${p95Latency}\n• Recovery Receipt: \`sha256:${receiptHash.substring(0, 16)}...\`\n• Verified by Admin: <@U01ROHITHADMIN> (@Rohith D)\n• Notified: <@U02DACHEPALLY> (@Dachepally) & <@U03NITHISHSYS> (@Nithish gajjela)\n• View Run: ${baseUrl}/runs/${id}`
+        : `🛑 *Incident Radar — Incident Escalated*\n• Target Service: \`${targetService}\`\n• Run ${id} could not achieve verified recovery. Escalated to Admin <@U01ROHITHADMIN> (@Rohith D) and System Designer <@U03NITHISHSYS> (@Nithish gajjela).`;
 
     return NextResponse.json({
       success: true,

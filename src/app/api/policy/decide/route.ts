@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
       decision = "ACT";
       rule_id = "R6_HIGH_EVIDENCE_REVERSIBLE";
       reason = "High confidence causal link backed by chronological telemetry; authorized catalogue action.";
-      slack_text = `🚨 *Incident Radar*: Assessment supported (${candidate_cause}). Auto-remediating with action: \`${recommended_action}\`.`;
+      slack_text = `🚨 *Incident Radar*: Assessment supported (${candidate_cause}). Auto-remediating with action: \`${recommended_action}\`.\n• *Frontend Specialist*: <@U02DACHEPALLY> (@Dachepally)\n• *Admin*: <@U01ROHITHADMIN> (@Rohith D)`;
     } else if (assessment_status === "uncertain" || assessment_status === "insufficient_data") {
       decision = "ASK";
       rule_id = "R4_LOW_EVIDENCE_REVIEW";
@@ -79,12 +79,12 @@ export async function POST(req: NextRequest) {
       requiredRole = body.affected_services?.length >= 2 ? "maintainer" : "responder";
       approvalToken = generateApprovalToken(run_id);
       const approveUrl = `${baseUrl}/approve/${run_id}?t=${approvalToken}`;
-      slack_text = `⚠️ *Incident Radar*: Triage uncertain (${candidate_cause}). Proposed fix \`${recommended_action}\` requires approval: ${approveUrl}`;
+      slack_text = `⚠️ *Incident Radar*: Triage uncertain (${candidate_cause}). Proposed fix \`${recommended_action}\` requires approval: ${approveUrl}\n• *System Designer*: <@U03NITHISHSYS> (@Nithish gajjela)\n• *Action Required by Admin*: <@U01ROHITHADMIN> (@Rohith D)`;
     } else {
       decision = "NOTIFY";
       rule_id = "R7_ACTION_CONTEXT_MISMATCH";
       reason = "Contradictory evidence or unsupported action. Escalating to on-call engineer.";
-      slack_text = `🛑 *Incident Radar*: Investigation escalated without automated action. Root cause ambiguous (${candidate_cause}). Paging on-call responder.`;
+      slack_text = `🛑 *Incident Radar*: Investigation escalated without automated action. Root cause ambiguous (${candidate_cause}). Paging on-call team:\n• <@U02DACHEPALLY> (@Dachepally - Frontend)\n• <@U03NITHISHSYS> (@Nithish gajjela - System Designer)\n• <@U01ROHITHADMIN> (@Rohith D - Admin)`;
     }
 
     // Persist run state
