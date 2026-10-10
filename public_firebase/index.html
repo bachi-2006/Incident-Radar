@@ -524,15 +524,13 @@
 
       // 2. Directly trigger Workato Orchestrator workflow on failure
       if (data.scenario) {
-        const assignedSlackId = data.assignedSlackId || (data.scenario.includes("ask") ? "U01ROHITHADMIN" : data.scenario === "notify" ? "U03NITHISHSYS" : "U02DACHEPALLY");
         const assignedName = data.assignedName || (data.scenario.includes("ask") ? "Rohith D" : data.scenario === "notify" ? "Nithish gajjela" : "Dachepally");
         fetch(`${RENDER_BACKEND}/api/orchestrator/trigger`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             scenario: data.scenario,
-            assigned_user_slack_id: assignedSlackId,
-            assigned_user_name: assignedName
+            category: data.category
           })
         })
         .then(res => res.json())
@@ -541,7 +539,7 @@
           const badge = document.getElementById(`workato-badge-${eventId}`);
           if (badge) {
             badge.className = "text-[10px] font-mono text-emerald-400 pt-1 flex items-center gap-1.5";
-            badge.innerHTML = `<span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>⚡ Workato Job: <strong class="text-white font-bold">${resData.job_id || 'Delivered'}</strong> | Policy: <strong class="text-emerald-300 font-bold">${resData.decision || data.scenario.toUpperCase()}</strong> | Slack Target: <strong class="text-indigo-200">@${assignedName}</strong>`;
+            badge.innerHTML = `<span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>⚡ Workato Job: <strong class="text-white font-bold">${resData.job_id || 'Delivered'}</strong> | Policy: <strong class="text-emerald-300 font-bold">${resData.decision || data.scenario.toUpperCase()}</strong> | Specialist: <strong class="text-indigo-200">@${assignedName}</strong>`;
           }
         })
         .catch(err => {
@@ -556,7 +554,7 @@
     }
 
     // ==========================================
-    // 🎨 FRONTEND INCIDENTS -> @Dachepally (U02DACHEPALLY)
+    // 🎨 FRONTEND INCIDENTS -> @Dachepally
     // ==========================================
     function triggerFeDeadClick() {
       clickCount++;
@@ -568,7 +566,7 @@
         latencyMs: 1000,
         confidence: 94,
         scenario: "fe_dead_click",
-        assignedSlackId: "U02DACHEPALLY",
+        category: "frontend",
         assignedName: "Dachepally",
         message: `Dead click: User clicked button#pay-button ${clickCount}x with 0 DOM mutations or network requests`,
         fingerprint: "fp_fe_dead_click",
@@ -585,7 +583,7 @@
         latencyMs: 620,
         confidence: 93,
         scenario: "fe_hydration",
-        assignedSlackId: "U02DACHEPALLY",
+        category: "frontend",
         assignedName: "Dachepally",
         message: "React 19 SSR hydration crash on /checkout: server tree differs from client DOM. Modal failed to mount.",
         fingerprint: "fp_fe_hydration_err",
@@ -602,7 +600,7 @@
         latencyMs: 110,
         confidence: 92,
         scenario: "fe_chunk_404",
-        assignedSlackId: "U02DACHEPALLY",
+        category: "frontend",
         assignedName: "Dachepally",
         message: "Loading chunk 1255 failed (404 Not Found) on CDN edge after deployment rollout. White Screen of Death.",
         fingerprint: "fp_fe_chunk_404",
@@ -619,7 +617,7 @@
         latencyMs: 40,
         confidence: 91,
         scenario: "fe_quota",
-        assignedSlackId: "U02DACHEPALLY",
+        category: "frontend",
         assignedName: "Dachepally",
         message: "DOMException QuotaExceededError in localStorage.setItem('ir_cart_session'). 5MB budget exceeded.",
         fingerprint: "fp_fe_quota_err",
@@ -636,7 +634,7 @@
         latencyMs: 1900,
         confidence: 89,
         scenario: "fe_calc_drift",
-        assignedSlackId: "U02DACHEPALLY",
+        category: "frontend",
         assignedName: "Dachepally",
         message: "Checkout calculation drift: floating-point rounding discrepancy on multi-currency tax rate (±0.02).",
         fingerprint: "fp_fe_calc_drift",
@@ -653,7 +651,7 @@
         latencyMs: 2200,
         confidence: 90,
         scenario: "fe_csp_violation",
-        assignedSlackId: "U02DACHEPALLY",
+        category: "frontend",
         assignedName: "Dachepally",
         message: "Content-Security-Policy directive 'script-src' blocked external payment gateway token loader.",
         fingerprint: "fp_fe_csp_block",
@@ -663,7 +661,7 @@
     }
 
     // ==========================================
-    // ⚙️ BACKEND / SYSTEM INCIDENTS -> @Nithish gajjela (U03NITHISHSYS)
+    // ⚙️ BACKEND / SYSTEM INCIDENTS -> @Nithish gajjela
     // ==========================================
     function triggerBeDbPool() {
       addTelemetryEvent({
@@ -673,7 +671,7 @@
         latencyMs: 1450,
         confidence: 96,
         scenario: "be_db_pool",
-        assignedSlackId: "U03NITHISHSYS",
+        category: "database",
         assignedName: "Nithish gajjela",
         message: "PostgreSQL connection pool saturated at 98% (max_connections 100 reached). Requests timing out after 30s.",
         fingerprint: "fp_be_db_pool",
@@ -690,7 +688,7 @@
         latencyMs: 1820,
         confidence: 95,
         scenario: "be_npe",
-        assignedSlackId: "U03NITHISHSYS",
+        category: "backend",
         assignedName: "Nithish gajjela",
         message: "NullPointerException at CheckoutController.java:42 processPayment(). Error rate surged to 42.5%.",
         fingerprint: "fp_be_controller_npe",
@@ -707,7 +705,7 @@
         latencyMs: 4200,
         confidence: 94,
         scenario: "be_slow_query",
-        assignedSlackId: "U03NITHISHSYS",
+        category: "database",
         assignedName: "Nithish gajjela",
         message: "Unindexed sequential scan on orders table holding table lock for 4200ms. 850 concurrent waiting queries.",
         fingerprint: "fp_be_slow_query",
@@ -724,7 +722,7 @@
         latencyMs: 950,
         confidence: 93,
         scenario: "be_redis_oom",
-        assignedSlackId: "U03NITHISHSYS",
+        category: "backend",
         assignedName: "Nithish gajjela",
         message: "Redis maxmemory limit reached (2048MB used of 2048MB); OOM command not allowed on user sessions.",
         fingerprint: "fp_be_redis_oom",
@@ -741,7 +739,7 @@
         latencyMs: 2600,
         confidence: 91,
         scenario: "be_auth_desync",
-        assignedSlackId: "U03NITHISHSYS",
+        category: "system_architecture",
         assignedName: "Nithish gajjela",
         message: "Telemetry Contradiction: Ingress reports 2.1ms nominal latency while auth gateway rejects 85% requests.",
         fingerprint: "fp_sys_auth_split_brain",
@@ -758,7 +756,7 @@
         latencyMs: 3100,
         confidence: 92,
         scenario: "be_kafka_lag",
-        assignedSlackId: "U03NITHISHSYS",
+        category: "backend",
         assignedName: "Nithish gajjela",
         message: "Event stream consumer lag spike: 45,000 uncommitted messages on order-events topic. Consumer drift growing.",
         fingerprint: "fp_be_kafka_lag",
@@ -775,7 +773,7 @@
         latencyMs: 2850,
         confidence: 90,
         scenario: "be_504_cascade",
-        assignedSlackId: "U03NITHISHSYS",
+        category: "system_architecture",
         assignedName: "Nithish gajjela",
         message: "Downstream banking partner switch intermittent 504 Gateway Timeouts propagating across 4 microservices.",
         fingerprint: "fp_be_504_cascade",
@@ -785,7 +783,7 @@
     }
 
     // ==========================================
-    // 👑 ADMIN / PROJECT LEAD INCIDENTS -> @Rohith D (U01ROHITHADMIN)
+    // 👑 ADMIN / PROJECT LEAD INCIDENTS -> @Rohith D
     // ==========================================
     function triggerAdminCanary() {
       addTelemetryEvent({
@@ -795,7 +793,7 @@
         latencyMs: 1200,
         confidence: 96,
         scenario: "admin_canary_fail",
-        assignedSlackId: "U01ROHITHADMIN",
+        category: "devops",
         assignedName: "Rohith D",
         message: "Canary deployment payment-api v2.4.1 breached 1.0% error rate SLA threshold (actual: 42.5%).",
         fingerprint: "fp_admin_canary_breach",
@@ -812,7 +810,7 @@
         latencyMs: 350,
         confidence: 95,
         scenario: "admin_circuit_breaker",
-        assignedSlackId: "U01ROHITHADMIN",
+        category: "system_architecture",
         assignedName: "Rohith D",
         message: "Payment Gateway Circuit Breaker state transitioned to OPEN after 50 consecutive failed requests.",
         fingerprint: "fp_admin_circuit_open",
@@ -829,7 +827,7 @@
         latencyMs: 4100,
         confidence: 95,
         scenario: "admin_heap_oom",
-        assignedSlackId: "U01ROHITHADMIN",
+        category: "system_architecture",
         assignedName: "Rohith D",
         message: "FATAL: Gradual cluster heap memory thrash over 48h (92% saturation). 50,000 active sessions affected (P1).",
         fingerprint: "fp_admin_heap_oom",
@@ -846,7 +844,7 @@
         latencyMs: 1600,
         confidence: 93,
         scenario: "admin_ddos_spike",
-        assignedSlackId: "U01ROHITHADMIN",
+        category: "security",
         assignedName: "Rohith D",
         message: "Ingress anomaly: 10,000 req/s concentrated from suspicious IP CIDR pool on /api/payouts. Rate limits breached.",
         fingerprint: "fp_admin_ddos_spike",
