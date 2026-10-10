@@ -30,13 +30,13 @@ export async function generateRecoveryReceipt(runId: string) {
       decision: run.decision,
       rules: run.rule_ids,
     },
-    execution_history: executions?.map(e => ({
+    execution_history: executions?.map((e: any) => ({
       action: e.action_type,
       role: e.role,
       status: e.status,
       timestamp: e.created_at
     })),
-    verification_evidence: samples?.map(s => ({
+    verification_evidence: samples?.map((s: any) => ({
       timestamp: s.timestamp,
       error_rate: s.error_rate,
       p95: s.p95_latency,

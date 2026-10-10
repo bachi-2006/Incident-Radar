@@ -208,7 +208,7 @@
 
     // Initialize SDK
     if (window.IR) {
-      new window.IR({ key: "demo_ingest_key_xyz" });
+      new window.IR({ key: "ik_demo_default_dev" });
     }
 
     function addTelemetryEvent(data) {
@@ -227,6 +227,7 @@
         statusEl.className = "text-[11px] text-slate-500 mt-1";
       }
 
+      const eventId = eventCount;
       const card = document.createElement("div");
       card.className = "p-3 rounded-xl bg-slate-900/90 border border-slate-800 space-y-1.5";
       card.innerHTML = `
@@ -242,13 +243,17 @@
           <div>Latency: <strong class="text-white">${data.latencyMs}ms</strong> | Conf: <strong class="text-emerald-400">${data.confidence}%</strong></div>
           <div class="text-slate-500 text-[10px]">fp: ${data.fingerprint}</div>
         </div>
+        <div id="workato-badge-${eventId}" class="text-[10px] font-mono text-indigo-300 pt-1 flex items-center gap-1.5">
+          <span class="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+          <span>Dispatching to Render backend & Workato orchestrator...</span>
+        </div>
       `;
 
       const container = document.getElementById("stream-container");
       container.insertBefore(card, container.firstChild);
 
       // 1. Send telemetry beacon to Render
-      fetch(`${RENDER_BACKEND}/api/collect/demo_ingest_key_xyz`, {
+      fetch(`${RENDER_BACKEND}/api/collect/ik_demo_default_dev`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -274,8 +279,20 @@
         .then(res => res.json())
         .then(resData => {
           console.log("[Workato Triggered]", resData);
+          const badge = document.getElementById(`workato-badge-${eventId}`);
+          if (badge) {
+            badge.className = "text-[10px] font-mono text-emerald-400 pt-1 flex items-center gap-1.5";
+            badge.innerHTML = `<span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>⚡ Workato Job: <strong class="text-white font-bold">${resData.job_id || 'Delivered'}</strong> | Policy: <strong class="text-emerald-300 font-bold">${resData.decision || data.scenario.toUpperCase()}</strong> | Slack: <span class="text-slate-200">#all-incident-radar</span>`;
+          }
         })
-        .catch(err => console.warn("Orchestrator trigger notice:", err));
+        .catch(err => {
+          console.warn("Orchestrator trigger notice:", err);
+          const badge = document.getElementById(`workato-badge-${eventId}`);
+          if (badge) {
+            badge.className = "text-[10px] font-mono text-slate-400 pt-1 flex items-center gap-1.5";
+            badge.innerHTML = `<span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>⚡ Dispatched to Render & Streamed to Dashboard`;
+          }
+        });
       }
     }
 

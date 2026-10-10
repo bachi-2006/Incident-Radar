@@ -113,3 +113,13 @@ export interface SimulationState {
   candidates: number;
   incidents: number;
 }
+
+export type PolicyDecision = "ACT" | "ASK" | "NOTIFY";
+export type EvidenceGrade = "HIGH" | "MEDIUM" | "LOW";
+
+export interface EvidenceContext {
+  evidence: Evidence[];
+  grade: EvidenceGrade;
+  timeline?: TimelineItem[];
+}
+

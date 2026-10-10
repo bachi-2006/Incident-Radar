@@ -1,4 +1,4 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createClient as createSupabaseClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 
 export const supabaseUrl =
@@ -33,7 +33,7 @@ const effectiveKey =
 
 export const supabase: SupabaseClient<Database> | null =
   isSupabaseConfigured && effectiveKey
-    ? createClient<Database>(supabaseUrl!, effectiveKey, {
+    ? (createSupabaseClient as any)(supabaseUrl!, effectiveKey, {
         auth: {
           persistSession: typeof window !== "undefined",
           autoRefreshToken: typeof window !== "undefined",
@@ -46,7 +46,7 @@ export const supabase: SupabaseClient<Database> | null =
  */
 export const supabaseAdmin: SupabaseClient<Database> | null =
   supabaseUrl && (supabaseSecretKey || supabasePublishableKey)
-    ? createClient<Database>(supabaseUrl, (supabaseSecretKey || supabasePublishableKey)!, {
+    ? (createSupabaseClient as any)(supabaseUrl, (supabaseSecretKey || supabasePublishableKey)!, {
         auth: {
           persistSession: false,
           autoRefreshToken: false,
@@ -62,3 +62,8 @@ export function getSupabaseClient(): SupabaseClient<Database> {
   }
   return supabase;
 }
+
+export function createClient(): any {
+  return (supabaseAdmin || supabase) as any;
+}
+
