@@ -101,11 +101,45 @@ export async function POST(req: Request) {
       summary: { grade, ruleId: policyResult.ruleId }
     });
 
+    // Determine assigned user mention based on triage context
+    let assignedSlackId = "U01ROHITHADMIN";
+    let assignedRole = "Admin / Project Lead";
+    let assignedHandle = "@Rohith D";
+
+    const causeLower = parsedTriage.data.candidate_cause.toLowerCase();
+    const action = parsedTriage.data.recommended_action;
+
+    if (action === "rollback_latest_deploy" || causeLower.includes("frontend") || causeLower.includes("click") || causeLower.includes("checkout")) {
+      assignedSlackId = "U02DACHEPALLY";
+      assignedRole = "Frontend Developer";
+      assignedHandle = "@Dachepally";
+    } else if (causeLower.includes("memory") || causeLower.includes("cluster") || causeLower.includes("infrastructure") || causeLower.includes("oom")) {
+      assignedSlackId = "U03NITHISHSYS";
+      assignedRole = "System Designer";
+      assignedHandle = "@Nithish gajjela";
+    }
+
+    let slack_text = "";
+    if (policyResult.decision === "ASK") {
+      slack_text = `⚠️ *Incident Radar — Human Approval Required*\n<@${assignedSlackId}> (${assignedHandle} - ${assignedRole}): Confidence requires human sign-off. Please review and approve remediation action \`${action}\`.\n👉 *Approval URL*: https://incident-radar.onrender.com/approve/${run_id}\n*Cause*: ${parsedTriage.data.candidate_cause}`;
+    } else if (policyResult.decision === "ACT") {
+      slack_text = `🚨 *Incident Radar — Autonomous Remediation*\n<@${assignedSlackId}> (${assignedHandle} - ${assignedRole}): Assessment supported (${parsedTriage.data.candidate_cause}). Auto-remediating with action: \`${action}\`.`;
+    } else {
+      slack_text = `🛑 *Incident Radar — Investigation Escalated*\nRoot cause ambiguous (${parsedTriage.data.candidate_cause}). Paging on-call team:\n• <@U02DACHEPALLY> (@Dachepally - Frontend Developer)\n• <@U03NITHISHSYS> (@Nithish gajjela - System Designer)\n• <@U01ROHITHADMIN> (@Rohith D - Admin)`;
+    }
+
     return Response.json({
+      run_id,
       decision: policyResult.decision,
+      action: parsedTriage.data.recommended_action,
+      fallback_action: parsedTriage.data.fallback_action,
+      rule_id: policyResult.ruleId,
       ruleId: policyResult.ruleId,
       grade: grade,
-      reason: policyResult.reason
+      reason: policyResult.reason,
+      slack_text,
+      assigned_user_slack_id: assignedSlackId,
+      timestamp: new Date().toISOString()
     });
 
   } catch (error: any) {

@@ -271,10 +271,16 @@
 
       // 2. Directly trigger Workato Orchestrator workflow on failure
       if (data.scenario) {
+        const assignedSlackId = data.scenario === "ask" ? "U01ROHITHADMIN" : data.scenario === "notify" ? "U03NITHISHSYS" : "U02DACHEPALLY";
+        const assignedName = data.scenario === "ask" ? "Rohith D" : data.scenario === "notify" ? "Nithish gajjela" : "Dachepally";
         fetch(`${RENDER_BACKEND}/api/orchestrator/trigger`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ scenario: data.scenario })
+          body: JSON.stringify({
+            scenario: data.scenario,
+            assigned_user_slack_id: assignedSlackId,
+            assigned_user_name: assignedName
+          })
         })
         .then(res => res.json())
         .then(resData => {
