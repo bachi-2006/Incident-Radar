@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Incident Radar — Client Telemetry Harness</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/ir-sdk.js"></script>
+  <style>
+    @keyframes pulse-slow {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .animate-pulse-slow { animation: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen p-4 md:p-8">
+  <div class="max-w-6xl mx-auto space-y-6">
+    
+    <!-- Top Header -->
+    <div class="bg-gradient-to-r from-slate-900 via-indigo-950/60 to-slate-900 border border-indigo-500/30 rounded-2xl p-6 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-2 mb-2">
+          <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+            🔥 Firebase Live Client Harness
+          </span>
+          <span class="text-xs text-slate-400 font-mono">v2.4.1 Canary</span>
+          <span class="px-2 py-0.5 rounded-full text-xs font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            Connected to Render Backend
+          </span>
+        </div>
+        <h1 class="text-2xl font-bold tracking-tight text-white">
+          Production Failure & Latency Injection Station
+        </h1>
+        <p class="text-xs md:text-sm text-slate-300 mt-1 max-w-2xl">
+          Trigger real failure scenarios (500, 504 soft error, dead clicks, 404s, OOM).
+          Telemetry is scrubbed client-side and streamed to the Render backend & Workato orchestrator.
+        </p>
+      </div>
+
+      <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 text-right">
+        <div class="text-[11px] text-slate-400 uppercase font-mono">Active Target Backend</div>
+        <div class="text-xs font-semibold text-emerald-400 flex items-center gap-1.5 justify-end mt-0.5">
+          <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse-slow"></span>
+          incident-radar.onrender.com
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Telemetry Gauges -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-slate-900/70 border border-slate-800 p-4 rounded-xl">
+        <div class="text-xs text-slate-400 mb-1">Observed Latency (p95)</div>
+        <div id="gauge-latency" class="text-2xl font-bold font-mono text-white">92 <span class="text-xs font-normal text-slate-400">ms</span></div>
+        <div id="gauge-latency-status" class="text-[11px] text-slate-500 mt-1">Normal baseline</div>
+      </div>
+
+      <div class="bg-slate-900/70 border border-slate-800 p-4 rounded-xl">
+        <div class="text-xs text-slate-400 mb-1">Triage Confidence</div>
+        <div id="gauge-confidence" class="text-2xl font-bold font-mono text-emerald-400">94%</div>
+        <div class="text-[11px] text-slate-500 mt-1">Auto-assigned threshold &gt; 75%</div>
+      </div>
+
+      <div class="bg-slate-900/70 border border-slate-800 p-4 rounded-xl">
+        <div class="text-xs text-slate-400 mb-1">Frontend Assignee</div>
+        <div class="text-base font-bold text-slate-100 truncate">Dachepally</div>
+        <div class="text-[11px] text-cyan-400 font-mono mt-1">@Dachepally (Frontend Dev)</div>
+      </div>
+
+      <div class="bg-slate-900/70 border border-slate-800 p-4 rounded-xl">
+        <div class="text-xs text-slate-400 mb-1">System Designer</div>
+        <div class="text-base font-bold text-slate-100 truncate">Nithish</div>
+        <div class="text-[11px] text-purple-400 font-mono mt-1">@Nithish (Sys Designer)</div>
+      </div>
+    </div>
+
+    <!-- Split Screen: Checkout App & Live Stream -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      
+      <!-- Checkout UI -->
+      <div class="lg:col-span-5 bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+            <div class="flex items-center gap-2">
+              <span class="text-lg">🛍️</span>
+              <span class="font-semibold text-white">Production Checkout View</span>
+            </div>
+            <span class="text-xs font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              Cart: $149.99
+            </span>
+          </div>
+
+          <div class="mt-4 p-3 rounded-lg bg-slate-950/70 border border-slate-800/80 space-y-2 text-xs">
+            <div class="flex justify-between text-slate-300">
+              <span>Incident Radar Enterprise Plan</span>
+              <span class="font-mono text-slate-200">$149.99</span>
+            </div>
+            <div class="flex justify-between text-slate-400">
+              <span>Telemetry Ingestion & Webhooks</span>
+              <span class="font-mono text-emerald-400">INCLUDED</span>
+            </div>
+            <div class="flex justify-between text-slate-400">
+              <span>Canary Deployment</span>
+              <span class="font-mono text-indigo-300">v2.4.1</span>
+            </div>
+          </div>
+
+          <div class="mt-6 space-y-3">
+            <div class="text-xs font-semibold uppercase tracking-wider text-slate-400">
+              Inject Production Failures
+            </div>
+
+            <!-- Dead click button -->
+            <button
+              id="pay-button"
+              onclick="triggerDeadClick()"
+              class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-medium text-xs md:text-sm flex items-center justify-between shadow-lg shadow-indigo-600/20 transition active:scale-[0.99]"
+            >
+              <span class="flex items-center gap-2">
+                <span>⚡</span> Submit Payment (Triggers Dead Click)
+              </span>
+              <span id="click-counter" class="text-xs font-mono bg-black/30 px-2 py-0.5 rounded">
+                Clicks: 0
+              </span>
+            </button>
+
+            <!-- 500 error -->
+            <button
+              onclick="trigger500()"
+              class="w-full py-2.5 px-3 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-200 text-xs font-medium flex items-center justify-between transition"
+            >
+              <span>🚨 500 Internal Error (DB Pool Exhausted)</span>
+              <span class="font-mono text-[11px] text-rose-400">~1450ms</span>
+            </button>
+
+            <!-- 504 soft error -->
+            <button
+              onclick="triggerSoftError()"
+              class="w-full py-2.5 px-3 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-200 text-xs font-medium flex items-center justify-between transition"
+            >
+              <span>⚠️ Soft Error (HTTP 200 with 504 Gateway Timeout)</span>
+              <span class="font-mono text-[11px] text-amber-400">~2600ms</span>
+            </button>
+
+            <!-- 404 missing resource -->
+            <button
+              onclick="trigger404()"
+              class="w-full py-2.5 px-3 rounded-xl border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-200 text-xs font-medium flex items-center justify-between transition"
+            >
+              <span>🔍 404 Not Found (Missing Payment Seal)</span>
+              <span class="font-mono text-[11px] text-cyan-400">~50ms</span>
+            </button>
+
+            <!-- Memory thrash OOM -->
+            <button
+              onclick="triggerOOM()"
+              class="w-full py-2.5 px-3 rounded-xl border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-200 text-xs font-medium flex items-center justify-between transition"
+            >
+              <span>💥 Cluster Heap OOM (Worker Thread Restart)</span>
+              <span class="font-mono text-[11px] text-purple-400">~4100ms</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="pt-4 border-t border-slate-800 text-[11px] text-slate-500 flex items-center justify-between">
+          <span>Admin: <strong class="text-slate-300">@Rohith D</strong></span>
+          <span class="text-emerald-400 font-mono">PII Scrubbed</span>
+        </div>
+      </div>
+
+      <!-- Telemetry Stream Terminal -->
+      <div class="lg:col-span-7 bg-slate-950 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between font-mono">
+        <div>
+          <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div class="flex items-center gap-2">
+              <span class="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span class="text-sm font-semibold text-slate-200">Live Ingest Telemetry Stream</span>
+            </div>
+            <span id="event-count" class="text-[11px] text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
+              0 events
+            </span>
+          </div>
+
+          <div id="stream-container" class="mt-4 space-y-2.5 max-h-[460px] overflow-y-auto pr-2 text-xs">
+            <div id="empty-state" class="p-8 text-center text-slate-600">
+              <p>No errors injected yet.</p>
+              <p class="text-[11px] text-slate-700 mt-1">Click any failure button on the left to stream live telemetry to Render & Slack.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 pt-3 border-t border-slate-800 text-[11px] flex items-center justify-between text-slate-400">
+          <span>Target Slack: <strong class="text-indigo-300">#all-incident-radar</strong></span>
+          <a href="https://incident-radar.onrender.com/readme" target="_blank" class="hover:text-slate-200 flex items-center gap-1 text-slate-400">
+            Inspect README Compliance →
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const RENDER_BACKEND = "https://incident-radar.onrender.com";
+    let clickCount = 0;
+    let eventCount = 0;
+
+    // Initialize SDK
+    if (window.IR) {
+      new window.IR({ key: "demo_ingest_key_xyz" });
+    }
+
+    function addTelemetryEvent(data) {
+      eventCount++;
+      document.getElementById("empty-state")?.remove();
+      document.getElementById("event-count").innerText = `${eventCount} events`;
+      document.getElementById("gauge-latency").innerHTML = `${data.latencyMs} <span class="text-xs font-normal text-slate-400">ms</span>`;
+      document.getElementById("gauge-confidence").innerText = `${data.confidence}%`;
+      
+      const statusEl = document.getElementById("gauge-latency-status");
+      if (data.latencyMs > 1000) {
+        statusEl.innerText = "⚠️ Latency degraded";
+        statusEl.className = "text-[11px] text-rose-400 mt-1";
+      } else {
+        statusEl.innerText = "Normal baseline";
+        statusEl.className = "text-[11px] text-slate-500 mt-1";
+      }
+
+      const card = document.createElement("div");
+      card.className = "p-3 rounded-xl bg-slate-900/90 border border-slate-800 space-y-1.5";
+      card.innerHTML = `
+        <div class="flex items-center justify-between text-[11px]">
+          <div class="flex items-center gap-2">
+            <span class="px-1.5 py-0.5 rounded font-bold uppercase text-[10px] ${data.color}">${data.code}</span>
+            <span class="text-slate-400">${data.targetService}</span>
+          </div>
+          <span class="text-slate-500 text-[10px]">${new Date().toLocaleTimeString()}</span>
+        </div>
+        <div class="text-slate-200 text-xs font-sans font-medium">${data.message}</div>
+        <div class="flex items-center justify-between pt-1 text-[11px] text-slate-400 border-t border-slate-800/60 font-mono">
+          <div>Latency: <strong class="text-white">${data.latencyMs}ms</strong> | Conf: <strong class="text-emerald-400">${data.confidence}%</strong></div>
+          <div class="text-slate-500 text-[10px]">fp: ${data.fingerprint}</div>
+        </div>
+      `;
+
+      const container = document.getElementById("stream-container");
+      container.insertBefore(card, container.firstChild);
+
+      // Send to Render backend
+      fetch(`${RENDER_BACKEND}/api/collect/demo_ingest_key_xyz`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          events: [{
+            kind: data.kind,
+            message: data.message,
+            page_path: "/checkout",
+            session_hash: "sess_firebase_live",
+            latency_ms: data.latencyMs,
+            status_code: data.statusCode,
+            detail: { code: data.code, confidence: data.confidence, target_service: data.targetService }
+          }]
+        })
+      }).catch(err => console.warn("Beacon collect notice:", err));
+    }
+
+    function triggerDeadClick() {
+      clickCount++;
+      document.getElementById("click-counter").innerText = `Clicks: ${clickCount}`;
+      addTelemetryEvent({
+        kind: "dead_click",
+        code: "CLIENT_DEAD_CLICK",
+        statusCode: 0,
+        latencyMs: 1000,
+        confidence: 93,
+        message: `Dead click: User clicked button#pay-button ${clickCount}x with 0 DOM mutations or network requests`,
+        fingerprint: "fp_dead_click_pay_btn",
+        targetService: "checkout-frontend",
+        color: "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
+      });
+    }
+
+    function trigger500() {
+      const lat = 1420 + Math.floor(Math.random() * 380);
+      addTelemetryEvent({
+        kind: "failed_request",
+        code: "HTTP_500_INTERNAL_ERROR",
+        statusCode: 500,
+        latencyMs: lat,
+        confidence: 96,
+        message: "DatabaseConnectionTimeout: pool exhausted after 30000ms at CheckoutController.processPayment()",
+        fingerprint: "fp_500_pool_exhaust",
+        targetService: "payment-gateway-service",
+        color: "bg-rose-500/20 text-rose-300 border border-rose-500/30"
+      });
+    }
+
+    function triggerSoftError() {
+      const lat = 2480 + Math.floor(Math.random() * 620);
+      addTelemetryEvent({
+        kind: "soft_error",
+        code: "GATEWAY_TIMEOUT_504",
+        statusCode: 200,
+        latencyMs: lat,
+        confidence: 91,
+        message: "HTTP 200 OK returned but payload contains { success: false, code: 'GATEWAY_TIMEOUT_504' }",
+        fingerprint: "fp_soft_gw_timeout",
+        targetService: "banking-switch-core",
+        color: "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+      });
+    }
+
+    function trigger404() {
+      const lat = 45 + Math.floor(Math.random() * 35);
+      addTelemetryEvent({
+        kind: "resource",
+        code: "HTTP_404_NOT_FOUND",
+        statusCode: 404,
+        latencyMs: lat,
+        confidence: 88,
+        message: "Failed to load resource: 404 Not Found on /images/secure-checkout-seal.png",
+        fingerprint: "fp_404_seal_badge",
+        targetService: "cdn-static-assets",
+        color: "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30"
+      });
+    }
+
+    function triggerOOM() {
+      const lat = 3850 + Math.floor(Math.random() * 950);
+      addTelemetryEvent({
+        kind: "rejection",
+        code: "HEAP_OUT_OF_MEMORY",
+        statusCode: 503,
+        latencyMs: lat,
+        confidence: 95,
+        message: "FATAL: Node.js worker heap limit reached (1420MB used of 1430MB). Worker thread restarting.",
+        fingerprint: "fp_heap_oom_worker",
+        targetService: "worker-cluster-pool",
+        color: "bg-purple-500/20 text-purple-300 border border-purple-500/30"
+      });
+    }
+  </script>
+</body>
+</html>
