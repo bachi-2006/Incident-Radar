@@ -19,7 +19,7 @@ test("policy decision rule evaluation for uncertain triage -> ASK", () => {
 });
 
 test("policy decision rule evaluation for contradictory evidence -> NOTIFY", () => {
-  const status = "contradictory";
+  const status: string = "contradictory";
   const decision = status === "supported" ? "ACT" : status === "uncertain" ? "ASK" : "NOTIFY";
   assert.equal(decision, "NOTIFY");
 });
