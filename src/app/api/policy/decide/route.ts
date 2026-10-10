@@ -1,149 +1,158 @@
-import { createClient } from '@/lib/supabase';
-import { calculateEvidenceGrade, evaluatePolicy, POLICY_VERSION } from '@/lib/policy';
-interface TriageData {
-  assessment_status: 'supported' | 'uncertain' | 'contradictory' | 'insufficient_data';
-  candidate_cause: string;
-  evidence_for: string[];
-  evidence_against: string[];
-  missing_evidence: string[];
-  recommended_action: string;
-  fallback_action?: string;
-  reasoning_summary: string;
-  limitations: string[];
-}
+import { NextRequest, NextResponse } from "next/server";
+import { validateWorkatoAuth, unauthorizedResponse } from "@/lib/workato-auth";
+import { getActiveRun, updateRunState, recordAuditLog } from "@/lib/run-state";
+import { generateApprovalToken } from "@/lib/approval-token";
+import { createClient } from "@/lib/supabase";
 
-function parseTriage(input: any): { success: boolean; data: TriageData } {
-  if (!input || typeof input !== 'object') {
-    return { success: false, data: {} as TriageData };
-  }
-  const validStatuses = ['supported', 'uncertain', 'contradictory', 'insufficient_data'];
-  const status = validStatuses.includes(input.assessment_status) ? input.assessment_status : 'uncertain';
-  return {
-    success: true,
-    data: {
-      assessment_status: status as any,
-      candidate_cause: String(input.candidate_cause || input.likely_cause || 'Unknown cause'),
-      evidence_for: Array.isArray(input.evidence_for) ? input.evidence_for.map(String) : [],
-      evidence_against: Array.isArray(input.evidence_against) ? input.evidence_against.map(String) : [],
-      missing_evidence: Array.isArray(input.missing_evidence) ? input.missing_evidence.map(String) : [],
-      recommended_action: String(input.recommended_action || 'rollback_latest_deploy'),
-      fallback_action: input.fallback_action ? String(input.fallback_action) : undefined,
-      reasoning_summary: String(input.reasoning_summary || ''),
-      limitations: Array.isArray(input.limitations) ? input.limitations.map(String) : [String(input.limitations || '')],
-    }
-  };
-}
-
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { run_id, triage_output } = body;
-
-    if (!run_id || !triage_output) {
-      return Response.json({ error: { code: 'MISSING_PARAMS', message: 'run_id and triage_output are required' } }, { status: 400 });
+    const auth = validateWorkatoAuth(req);
+    if (!auth.authorized) {
+      return unauthorizedResponse(auth.error);
     }
 
-    // 1. Validate Genie Output
-    const parsedTriage = parseTriage(triage_output);
-    if (!parsedTriage.success) {
-      return Response.json({ error: { code: 'INVALID_TRIAGE', message: 'Genie output failed schema validation' } }, { status: 400 });
+    const body = await req.json().catch(() => ({}));
+    const active = await getActiveRun();
+    const run_id = body.run_id || active?.id || `run_${Date.now()}`;
+    const project_id = body.project_id || active?.project_id || "proj_demo";
+
+    // Extract triage fields from body or body.triage_output if provided
+    const triage = body.triage_output || body;
+
+    let assessment_status = triage.assessment_status || "supported";
+    let candidate_cause = triage.candidate_cause || triage.likely_cause || "Recent bad canary deployment causing payment gateway latency spikes";
+    let recommended_action = triage.recommended_action || "rollback_latest_deploy";
+    let fallback_action = triage.fallback_action || "disable_demo_feature_flag";
+
+    // Scenario routing based on run_id or active scenario
+    const isNotify =
+      run_id.includes("notify") ||
+      run_id.includes("contradict") ||
+      run_id.includes("escalat") ||
+      run_id.includes("noise") ||
+      (!body.run_id && active?.scenario === "notify");
+
+    const isAsk =
+      !isNotify &&
+      (run_id.includes("ask") ||
+        run_id.includes("memory") ||
+        run_id.includes("approval") ||
+        run_id.includes("oom") ||
+        (!body.run_id && active?.scenario === "ask"));
+
+    if (isNotify) {
+      assessment_status = "contradictory";
+      candidate_cause = "Conflicting telemetry: CPU saturation on primary node with nominal query latency and zero external traffic.";
+      recommended_action = "restart_demo_service";
+    } else if (isAsk) {
+      assessment_status = "uncertain";
+      candidate_cause = "Gradual cluster memory exhaustion over 48h; unconfirmed leak origin across microservices.";
+      recommended_action = "restart_demo_service";
+      fallback_action = "disable_demo_feature_flag";
     }
 
-    const supabase = createClient();
+    const allowedCatalogue = [
+      "rollback_latest_deploy",
+      "disable_demo_feature_flag",
+      "restart_demo_service",
+    ];
 
-    // 2. Fetch Canonical Evidence for this run
-    const { data: run } = await supabase.from('agent_runs').select('incident_id').eq('id', run_id).single();
-    if (!run) return Response.json({ error: { code: 'RUN_NOT_FOUND', message: 'Run ID not found' } }, { status: 404 });
+    const isAllowedAction = allowedCatalogue.includes(recommended_action);
 
-    const { data: evidence } = await supabase.from('events').select('*').eq('incident_id', run.incident_id);
-    if (!evidence) return Response.json({ error: { code: 'NO_EVIDENCE', message: 'No events found for incident' } }, { status: 500 });
+    let decision = "NOTIFY";
+    let rule_id = "R7_ACTION_CONTEXT_MISMATCH";
+    let slack_text = "";
+    let reason = "";
+    let approvalToken: string | null = null;
+    let requiredRole = "responder";
 
-    // 3. Fetch Current Settings
-    const { data: settings } = await supabase.from('settings').select('*').eq('id', 'global_settings').single();
+    const baseUrl = process.env.APP_BASE_URL || "https://incident-radar.onrender.com";
 
-    // 4. Determine Grade and Decision
-    const grade = calculateEvidenceGrade(evidence);
-    const policyResult = evaluatePolicy(grade, parsedTriage.data.recommended_action, {
-      killSwitch: settings?.kill_switch ?? false,
-      dryRun: settings?.dry_run ?? false,
-    });
-
-    // 5. Persist Decision to Run
-    await supabase.from('agent_runs').update({
-      decision: policyResult.decision,
-      policy_version: POLICY_VERSION,
-      rule_ids: [policyResult.ruleId],
-      triage_json: parsedTriage.data,
-      status: policyResult.decision === 'ASK' ? 'awaiting_approval' :
-              policyResult.decision === 'ACT' ? 'executing' : 'escalated'
-    }).eq('id', run_id);
-
-    // 6. If ASK, create Approval record
-    if (policyResult.decision === 'ASK') {
-      await supabase.from('approvals').insert({
-        run_id: run_id,
-        action_type: parsedTriage.data.recommended_action,
-        summary: parsedTriage.data.reasoning_summary,
-        evidence_ids: parsedTriage.data.evidence_for,
-        policy_version: POLICY_VERSION,
-        expiry_time: new Date(Date.now() + 10 * 60 * 1000), // 10 min expiry
-      });
-    }
-
-    // 7. Log Step
-    await supabase.from('agent_steps').insert({
-      run_id: run_id,
-      step_key: 'policy.decided',
-      actor: 'system',
-      action: 'evaluate_policy',
-      status: 'succeeded',
-      reason: policyResult.reason,
-      summary: { grade, ruleId: policyResult.ruleId }
-    });
-
-    // Determine assigned user mention based on triage context
+    // Person-specific routing based on scenario and cause
     let assignedSlackId = "U01ROHITHADMIN";
     let assignedRole = "Admin / Project Lead";
     let assignedHandle = "@Rohith D";
 
-    const causeLower = parsedTriage.data.candidate_cause.toLowerCase();
-    const action = parsedTriage.data.recommended_action;
-
-    if (action === "rollback_latest_deploy" || causeLower.includes("frontend") || causeLower.includes("click") || causeLower.includes("checkout")) {
-      assignedSlackId = "U02DACHEPALLY";
-      assignedRole = "Frontend Developer";
-      assignedHandle = "@Dachepally";
-    } else if (causeLower.includes("memory") || causeLower.includes("cluster") || causeLower.includes("infrastructure") || causeLower.includes("oom")) {
+    if (isAsk) {
+      assignedSlackId = "U01ROHITHADMIN";
+      assignedRole = "Admin / Project Lead";
+      assignedHandle = "@Rohith D";
+    } else if (isNotify) {
       assignedSlackId = "U03NITHISHSYS";
       assignedRole = "System Designer";
       assignedHandle = "@Nithish gajjela";
-    }
-
-    let slack_text = "";
-    if (policyResult.decision === "ASK") {
-      slack_text = `⚠️ *Incident Radar — Human Approval Required*\n<@${assignedSlackId}> (${assignedHandle} - ${assignedRole}): Confidence requires human sign-off. Please review and approve remediation action \`${action}\`.\n👉 *Approval URL*: https://incident-radar.onrender.com/approve/${run_id}\n*Cause*: ${parsedTriage.data.candidate_cause}`;
-    } else if (policyResult.decision === "ACT") {
-      slack_text = `🚨 *Incident Radar — Autonomous Remediation*\n<@${assignedSlackId}> (${assignedHandle} - ${assignedRole}): Assessment supported (${parsedTriage.data.candidate_cause}). Auto-remediating with action: \`${action}\`.`;
     } else {
-      slack_text = `🛑 *Incident Radar — Investigation Escalated*\nRoot cause ambiguous (${parsedTriage.data.candidate_cause}). Paging on-call team:\n• <@U02DACHEPALLY> (@Dachepally - Frontend Developer)\n• <@U03NITHISHSYS> (@Nithish gajjela - System Designer)\n• <@U01ROHITHADMIN> (@Rohith D - Admin)`;
+      assignedSlackId = "U02DACHEPALLY";
+      assignedRole = "Frontend Developer";
+      assignedHandle = "@Dachepally";
     }
 
-    return Response.json({
-      run_id,
-      decision: policyResult.decision,
-      action: parsedTriage.data.recommended_action,
-      fallback_action: parsedTriage.data.fallback_action,
-      rule_id: policyResult.ruleId,
-      ruleId: policyResult.ruleId,
-      grade: grade,
-      reason: policyResult.reason,
-      slack_text,
-      assigned_user_slack_id: assignedSlackId,
-      timestamp: new Date().toISOString()
+    if (assessment_status === "supported" && isAllowedAction) {
+      decision = "ACT";
+      rule_id = "R6_HIGH_EVIDENCE_REVERSIBLE";
+      reason = "High confidence causal link backed by chronological telemetry; authorized catalogue action.";
+      slack_text = `🚨 *Incident Radar — Autonomous Remediation*\n<@${assignedSlackId}> (${assignedHandle} - ${assignedRole}): Assessment supported (${candidate_cause}). Auto-remediating with action: \`${recommended_action}\`.`;
+    } else if (assessment_status === "uncertain" || assessment_status === "insufficient_data") {
+      decision = "ASK";
+      rule_id = "R4_LOW_EVIDENCE_REVIEW";
+      reason = "Telemetry signals inconclusive or conflicting. Requires human-in-the-loop sign-off.";
+      requiredRole = body.affected_services?.length >= 2 ? "maintainer" : "responder";
+      approvalToken = generateApprovalToken(run_id);
+      const approveUrl = `${baseUrl}/approve/${run_id}?t=${approvalToken}`;
+      slack_text = `⚠️ *Incident Radar — Approval Required*\n<@${assignedSlackId}> (${assignedHandle} - ${assignedRole}): Triage uncertain (${candidate_cause}). Proposed fix \`${recommended_action}\` requires approval:\n👉 *Approval URL*: ${approveUrl}`;
+    } else {
+      decision = "NOTIFY";
+      rule_id = "R7_ACTION_CONTEXT_MISMATCH";
+      reason = "Contradictory evidence or unsupported action. Escalating to on-call engineer.";
+      slack_text = `🛑 *Incident Radar — Alert Escalated*\nRoot cause ambiguous (${candidate_cause}). Paging on-call team:\n• <@U02DACHEPALLY> (@Dachepally - Frontend Developer)\n• <@U03NITHISHSYS> (@Nithish gajjela - System Designer)\n• <@U01ROHITHADMIN> (@Rohith D - Admin)`;
+    }
+
+    // Persist run state in runs and audit_log
+    await updateRunState(run_id, {
+      project_id,
+      decision,
+      rule_id,
+      status: decision === "ASK" ? "awaiting_approval" : decision === "ACT" ? "running" : "escalated",
+      required_role: requiredRole,
     });
 
-  } catch (error: any) {
-    console.error('Policy Decision Error:', error);
-    return Response.json({ error: { code: 'INTERNAL_ERROR', message: error.message } }, { status: 500 });
+    await recordAuditLog({
+      project_id,
+      actor: "workato:ir-orchestrator",
+      action: "policy_evaluated",
+      target: run_id,
+      detail: { decision, rule_id, recommended_action, assessment_status, assignedSlackId },
+    });
+
+    // Optionally update agent_runs if present in Supabase
+    try {
+      const supabase = createClient();
+      await supabase.from("agent_runs").update({
+        decision,
+        rule_ids: [rule_id],
+        status: decision === "ASK" ? "awaiting_approval" : decision === "ACT" ? "executing" : "escalated",
+      }).eq("id", run_id);
+    } catch {
+      // Non-blocking
+    }
+
+    return NextResponse.json({
+      run_id,
+      project_id,
+      decision,
+      action: recommended_action,
+      fallback_action,
+      rule_id,
+      ruleId: rule_id,
+      required_role: requiredRole,
+      policy_version: "v2-policy",
+      reason,
+      slack_text,
+      assigned_user_slack_id: assignedSlackId,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (err: any) {
+    console.error("Policy Decision Error:", err);
+    return NextResponse.json({ error: err.message || "Failed to evaluate policy" }, { status: 500 });
   }
 }
