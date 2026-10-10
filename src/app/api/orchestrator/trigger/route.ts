@@ -1,6 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { setActiveRun } from "@/lib/run-state";
 
+function corsHeaders() {
+  return {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, X-IR-Secret, Authorization",
+  };
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: corsHeaders(),
+  });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
@@ -71,15 +86,23 @@ export async function POST(req: NextRequest) {
 
     const responseData = await res.json().catch(() => ({}));
 
-    return NextResponse.json({
-      success: true,
-      scenario,
-      run_id,
-      incident_id,
-      workato_response: responseData,
-      message: `Triggered Workato orchestrator for scenario '${scenario.toUpperCase()}'. Check Slack #all-incident-radar in ~10 seconds!`,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        scenario,
+        run_id,
+        incident_id,
+        workato_response: responseData,
+        message: `Triggered Workato orchestrator for scenario '${scenario.toUpperCase()}'. Check Slack #all-incident-radar in ~10 seconds!`,
+      },
+      {
+        headers: corsHeaders(),
+      }
+    );
   } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: err.message },
+      { status: 500, headers: corsHeaders() }
+    );
   }
 }

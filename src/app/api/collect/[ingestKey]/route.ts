@@ -2,6 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { recordAuditLog } from "@/lib/run-state";
 
+function corsHeaders() {
+  return {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, X-IR-Secret, Authorization",
+  };
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: corsHeaders(),
+  });
+}
+
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ ingestKey: string }> }
@@ -33,15 +48,23 @@ export async function POST(
       detail: { count: processed.length, isSpike, fingerprints: processed.map(p => p.fingerprint) },
     });
 
-    return NextResponse.json({
-      success: true,
-      ingest_key: ingestKey,
-      ingested: processed.length,
-      spike_detected: isSpike,
-      processed_events: processed,
-      processed_at: new Date().toISOString(),
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        ingest_key: ingestKey,
+        ingested: processed.length,
+        spike_detected: isSpike,
+        processed_events: processed,
+        processed_at: new Date().toISOString(),
+      },
+      {
+        headers: corsHeaders(),
+      }
+    );
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to collect client events" }, { status: 500 });
+    return NextResponse.json(
+      { error: err.message || "Failed to collect client events" },
+      { status: 500, headers: corsHeaders() }
+    );
   }
 }

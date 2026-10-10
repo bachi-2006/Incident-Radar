@@ -106,8 +106,9 @@
           </div>
 
           <div class="mt-6 space-y-3">
-            <div class="text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Inject Production Failures
+            <div class="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+              <span>Inject Production Failures</span>
+              <span class="text-[10px] text-emerald-400">⚡ Auto-Fires Workato</span>
             </div>
 
             <!-- Dead click button -->
@@ -129,7 +130,7 @@
               onclick="trigger500()"
               class="w-full py-2.5 px-3 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-200 text-xs font-medium flex items-center justify-between transition"
             >
-              <span>🚨 500 Internal Error (DB Pool Exhausted)</span>
+              <span>🚨 500 Error (Auto-Remediate ACT)</span>
               <span class="font-mono text-[11px] text-rose-400">~1450ms</span>
             </button>
 
@@ -138,7 +139,7 @@
               onclick="triggerSoftError()"
               class="w-full py-2.5 px-3 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-200 text-xs font-medium flex items-center justify-between transition"
             >
-              <span>⚠️ Soft Error (HTTP 200 with 504 Gateway Timeout)</span>
+              <span>⚠️ Soft Error (HTTP 200 / 504 Timeout)</span>
               <span class="font-mono text-[11px] text-amber-400">~2600ms</span>
             </button>
 
@@ -147,7 +148,7 @@
               onclick="trigger404()"
               class="w-full py-2.5 px-3 rounded-xl border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-200 text-xs font-medium flex items-center justify-between transition"
             >
-              <span>🔍 404 Not Found (Missing Payment Seal)</span>
+              <span>🔍 404 Not Found (Missing Badge Asset)</span>
               <span class="font-mono text-[11px] text-cyan-400">~50ms</span>
             </button>
 
@@ -156,7 +157,7 @@
               onclick="triggerOOM()"
               class="w-full py-2.5 px-3 rounded-xl border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-200 text-xs font-medium flex items-center justify-between transition"
             >
-              <span>💥 Cluster Heap OOM (Worker Thread Restart)</span>
+              <span>💥 Cluster Heap OOM (Human Sign-off ASK)</span>
               <span class="font-mono text-[11px] text-purple-400">~4100ms</span>
             </button>
           </div>
@@ -246,7 +247,7 @@
       const container = document.getElementById("stream-container");
       container.insertBefore(card, container.firstChild);
 
-      // Send to Render backend
+      // 1. Send telemetry beacon to Render
       fetch(`${RENDER_BACKEND}/api/collect/demo_ingest_key_xyz`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -262,6 +263,20 @@
           }]
         })
       }).catch(err => console.warn("Beacon collect notice:", err));
+
+      // 2. Directly trigger Workato Orchestrator workflow on failure
+      if (data.scenario) {
+        fetch(`${RENDER_BACKEND}/api/orchestrator/trigger`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ scenario: data.scenario })
+        })
+        .then(res => res.json())
+        .then(resData => {
+          console.log("[Workato Triggered]", resData);
+        })
+        .catch(err => console.warn("Orchestrator trigger notice:", err));
+      }
     }
 
     function triggerDeadClick() {
@@ -273,6 +288,7 @@
         statusCode: 0,
         latencyMs: 1000,
         confidence: 93,
+        scenario: "act", // Triggers frontend incident to @Dachepally
         message: `Dead click: User clicked button#pay-button ${clickCount}x with 0 DOM mutations or network requests`,
         fingerprint: "fp_dead_click_pay_btn",
         targetService: "checkout-frontend",
@@ -288,6 +304,7 @@
         statusCode: 500,
         latencyMs: lat,
         confidence: 96,
+        scenario: "act", // Triggers ACT scenario in Workato
         message: "DatabaseConnectionTimeout: pool exhausted after 30000ms at CheckoutController.processPayment()",
         fingerprint: "fp_500_pool_exhaust",
         targetService: "payment-gateway-service",
@@ -303,6 +320,7 @@
         statusCode: 200,
         latencyMs: lat,
         confidence: 91,
+        scenario: "act",
         message: "HTTP 200 OK returned but payload contains { success: false, code: 'GATEWAY_TIMEOUT_504' }",
         fingerprint: "fp_soft_gw_timeout",
         targetService: "banking-switch-core",
@@ -318,6 +336,7 @@
         statusCode: 404,
         latencyMs: lat,
         confidence: 88,
+        scenario: "notify",
         message: "Failed to load resource: 404 Not Found on /images/secure-checkout-seal.png",
         fingerprint: "fp_404_seal_badge",
         targetService: "cdn-static-assets",
@@ -333,6 +352,7 @@
         statusCode: 503,
         latencyMs: lat,
         confidence: 95,
+        scenario: "ask", // Triggers ASK approval scenario to @Rohith D and @Nithish
         message: "FATAL: Node.js worker heap limit reached (1420MB used of 1430MB). Worker thread restarting.",
         fingerprint: "fp_heap_oom_worker",
         targetService: "worker-cluster-pool",
